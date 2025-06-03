@@ -1,0 +1,144 @@
+C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/03/2025 17:55:46 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE KNOB_DIMMING
+OBJECT MODULE PLACED IN .\Release\Objects\knob_dimming.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\User\knob_dimming.c LARGE OPTIMIZE(8,SPEED) BROWSE INTVECTOR(0X000
+                    -C) INCDIR(..\..\Libraries\Include;..\..\User) INTERVAL(3) DEBUG OBJECTEXTEND PRINT(.\Release\Listings\knob_dimming.lst) 
+                    -OBJECT(.\Release\Objects\knob_dimming.obj)
+
+line level    source
+
+   1          #include "knob_dimming.h" // 旋钮调光头文件
+   2          
+   3          volatile u16 limited_max_pwm_duty = 0; // 存放限制的最大占空比
+   4          volatile u16 limited_adjust_pwm_duty;  // 存放旋钮限制之后的，待调整的占空比值
+   5          
+   6          // 根据旋钮，限制当前的最大占空比
+   7          void update_max_pwm_duty_coefficient(void)
+   8          {
+   9   1          /*
+  10   1              标志位，上一次限制的最大占空比是否为0，
+  11   1              如果为0，需要等到检测的ad值超过20%、30%......再使能旋钮的功能，否则不�
+             -�能
+  12   1              相当于给关机和开机之间划一个较大的死区
+  13   1          */
+  14   1          static bit flag_is_last_limited_equal_zero = 0;
+  15   1          volatile u16 adc_val = 0;
+  16   1          adc_sel_pin(ADC_SEL_PIN_P31);
+  17   1          adc_val = adc_get_val();
+  18   1      
+  19   1          // limited_max_pwm_duty = (u32)adjust_duty * adc_val / 4096; // 会出现指数级下降，因为adjus
+             -t_duty一直在变化
+  20   1          // limited_max_pwm_duty = (u32)MAX_PWM_DUTY * adc_val / 4096; // 分级太多，加上抖动和迅速�
+             -��化，会导致灯光闪烁
+  21   1      
+  22   1      #if 1
+  23   1      
+  24   1          // 它闪灯可能是因为功率太低，也可能是检测脚的波动，导致单片机触发了频
+             -繁开灯关灯的操作
+  25   1          // 方法1：试着加大调光那里的电容，提供一个缓冲
+  26   1          // 方法2：单片机检测到关灯之后，再检测到旋钮调到20%、30%之后再开灯
+  27   1      
+  28   1          if (0 == flag_is_last_limited_equal_zero) // 如果上一次限制的最大占空比不是0，则正�
+             -�地根据旋钮来限制最大占空比
+  29   1          {
+  30   2              // 下面条件语句块内的值和判断条件中的值不一样，不过影响不大
+  31   2              // ad值是假设参考电压VCC为4.87V，计算得出
+  32   2              if (adc_val <= KNOB_DIMMING_MIN_ADC_VAL) // MIN 0%  0.57V
+  33   2              {
+  34   3                  limited_max_pwm_duty = 0;
+  35   3              }
+  36   2              // else if (adc_val <= 1278) // 20% 1.52V
+  37   2              else if (adc_val <= KNOB_DIMMING_ADC_VAL_20_PERCENT) // 20% 1.52V /* 这里用5V作为参考电压
+             - */
+  38   2              {
+  39   3                  // 计算采集到的ad值所占20%对应的ad值得占比，再乘以 20%的占空比
+  40   3                  /*
+  41   3                      计算验证，这里的ad值如果只相差1，占空比的值也只相差1
+  42   3                  */
+  43   3                  limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY * 2 / 10 / KNOB_DIMMING_ADC_VAL_20_PERCENT;
+  44   3              }
+  45   2              // else if (adc_val <= 2498) // 40% 2.97V
+  46   2              else if (adc_val <= KNOB_DIMMING_ADC_VAL_40_PERCENT) // 40% 2.79V /* 这里用5V作为参考电压
+             - */
+C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/03/2025 17:55:46 PAGE 2   
+
+  47   2              {
+  48   3                  /*
+  49   3                      计算验证，这里的ad值如果只相差1，占空比的值也只相差1
+  50   3                  */
+  51   3                  limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY * 4 / 10 / KNOB_DIMMING_ADC_VAL_40_PERCENT;
+  52   3              }
+  53   2              // else if (adc_val <= 2641) // 50% 3.14V
+  54   2              else if (adc_val <= KNOB_DIMMING_ADC_VAL_50_PERCENT) // 50% 3.46V /* 这里用5V作为参考电压
+             - */
+  55   2              {
+  56   3                  limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY / 2 / KNOB_DIMMING_ADC_VAL_50_PERCENT;
+  57   3              }
+  58   2              // else if (adc_val <= 3482) // 60% 4.14V
+  59   2              else if (adc_val <= KNOB_DIMMING_ADC_VAL_60_PERCENT) // 60% 3.98V /* 这里用5V作为参考电压
+             - */
+  60   2              {
+  61   3                  limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY * 6 / 10 / KNOB_DIMMING_ADC_VAL_60_PERCENT;
+  62   3              }
+  63   2              // else if (adc_val <= 4087) // 80% 4.86V
+  64   2              else if (adc_val <= KNOB_DIMMING_MAX_ADC_VAL) //
+  65   2              {
+  66   3                  limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY * 8 / 10 / KNOB_DIMMING_MAX_ADC_VAL;
+  67   3              }
+  68   2              else
+  69   2              {
+  70   3                  // limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY / 4095;
+  71   3                  limited_max_pwm_duty = MAX_PWM_DUTY;
+  72   3              }
+  73   2      
+  74   2              limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty *
+             - 旋钮限制的占空比系数
+  75   2      
+  76   2              if (limited_adjust_pwm_duty >= 5950) // 大于该值，直接输出最大功率，防止从MIN扭�
+             -��MAX时，输出不了最大功率
+  77   2              {
+  78   3                  limited_adjust_pwm_duty = adjust_duty;
+  79   3              }
+  80   2      
+  81   2              if (0 == limited_adjust_pwm_duty)
+  82   2              {
+  83   3                  flag_is_last_limited_equal_zero = 1;
+  84   3              }
+  85   2          }
+  86   1          else // 如果上一次限制的最大占空比是0，则要等旋钮扭到 xx% 的位置再使能旋�
+             -��的功能
+  87   1          {
+  88   2              if (adc_val >= KNOB_DIMMING_ADC_VAL_20_PERCENT)
+  89   2              // if (adc_val >= ((KNOB_DIMMING_ADC_VAL_40_PERCENT - KNOB_DIMMING_ADC_VAL_20_PERCENT) / 2 + KNOB_
+             -DIMMING_ADC_VAL_20_PERCENT - 260)) // 30%（原来的计算值会偏高，最后减去一些作为补偿）
+  90   2              {
+  91   3                  flag_is_last_limited_equal_zero = 0;
+  92   3              }
+  93   2          }
+  94   1      
+  95   1      #if USE_MY_DEBUG
+  96   1      
+  97   1          // printf("cur_level %u\n", knob_dimming_cur_level);
+  98   1      
+  99   1      #endif // #if USE_MY_DEBUG
+ 100   1      
+ 101   1      #endif
+ 102   1      }
+C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/03/2025 17:55:46 PAGE 3   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    392    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
