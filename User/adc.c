@@ -291,29 +291,10 @@ void set_duty(void)
 
     // 如果温度正常，根据9脚的状态来调节PWM占空比
     if (TEMP_NORMAL == temp_status)
-    {
-        // if (tmr0_is_open == 0)
-        // {
-        //     tmr0_is_open = 1;
-        //     tmr0_enable(); // 打开定时器0，开始根据9脚的状态来调节PWM脉宽
-        // }
-
-        // if (tmr0_flag == 1) // 每25ms进入一次
-        // {
-        //     tmr0_flag = 0;
-        //     // adc0_val = 0;                     // 清除之前采集到的电压值
-        //     // adc_sel_pin(ADC_SEL_PIN_GET_VOL); // 切换到9脚对应的adc配置
-        //     // adc_scan_according_pin9();
-        //     according_pin9_to_adjust_pwm();
-        //     // 设定占空比
-        //     while (c_duty != adjust_duty)
-        //     {
-        //         Adaptive_Duty(); // 调节占空比
-        //     }
-        // }
+    { 
 
         according_pin9_to_adjust_pwm();
-        Adaptive_Duty(); // 调节占空比
+        // Adaptive_Duty(); // 调节占空比
 #if USE_MY_DEBUG
         // printf("cur duty: %d\n", c_duty);
 #endif
@@ -327,7 +308,7 @@ void set_duty(void)
         adjust_duty = PWM_DUTY_50_PERCENT;
         // while (c_duty != adjust_duty) // 如果有旋钮调光功能，这个循环就会卡住，无法退出
         {
-            Adaptive_Duty(); // 调节占空比
+            // Adaptive_Duty(); // 调节占空比
         }
     }
     // else if (TEMP_75_30MIN == temp_status)
@@ -339,7 +320,7 @@ void set_duty(void)
         adjust_duty = PWM_DUTY_25_PERCENT;
         // while (c_duty != adjust_duty) // 如果有旋钮调光功能，这个循环就会卡住，无法退出
         {
-            Adaptive_Duty(); // 调节占空比
+            // Adaptive_Duty(); // 调节占空比
         }
     }
 }

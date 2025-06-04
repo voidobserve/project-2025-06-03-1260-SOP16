@@ -81,6 +81,11 @@ void TIMR0_IRQHandler(void) interrupt TMR0_IRQn
             cnt_during_power_on = 0;
             flag_time_comes_during_power_on = 1; // 开机缓启动期间，控制每次调节PWM占空比的时间
         }
+
+        if (rf_key_para.cur_scan_times < 255)
+        {
+            rf_key_para.cur_scan_times++;
+        }
     }
 
     // 退出中断设置IP，不可删除

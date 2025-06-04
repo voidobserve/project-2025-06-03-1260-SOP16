@@ -13,6 +13,8 @@ enum
     ADC_SEL_PIN_GET_TEMP = 0x01, // 根据热敏电阻一端来配置ADC
     ADC_SEL_PIN_GET_VOL = 0x02,  // 根据9脚来配置ADC
     ADC_SEL_PIN_P31 = 0x03, // P31，7脚
+
+    // ADC_SEL_PIN_
 };
 
 extern volatile u16 adc_val_pin_9; // 存放9脚采集到的ad值

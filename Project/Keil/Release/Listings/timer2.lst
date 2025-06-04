@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/03/2025 17:55:46 PAGE 1   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/04/2025 14:59:14 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIMER2
@@ -62,7 +62,7 @@ line level    source
   48   2              // if (pwm_duty_sub_cnt >= 50)
   49   2              {
   50   3                  pwm_duty_sub_cnt = 0;
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/03/2025 17:55:46 PAGE 2   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/04/2025 14:59:14 PAGE 2   
 
   51   3                  flag_is_pwm_sub_time_comes = 1;
   52   3              }
@@ -126,7 +126,7 @@ line level    source
  104   6      
  105   6                              flag_is_enable_recv = 1;
  106   6                          }
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/03/2025 17:55:46 PAGE 3   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/04/2025 14:59:14 PAGE 3   
 
  107   5                          else if (flag_is_enable_recv &&
  108   5                                   low_level_cnt >= 2 && low_level_cnt < 7 &&
@@ -190,7 +190,7 @@ line level    source
  162   4                      high_level_cnt++;
  163   4                  }
  164   3      
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/03/2025 17:55:46 PAGE 4   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/04/2025 14:59:14 PAGE 4   
 
  165   3                  if (__flag_is_recved_data) //
  166   3                  {
@@ -200,84 +200,87 @@ line level    source
  170   4                      high_level_cnt = 0;
  171   4      
  172   4                      // if (rf_data != 0)
- 173   4                      if (0 == flag_is_recved_rf_data) /* 如果之前未接收到数据 或是 已经处理完�
-             -��一次接收到的数据 */
- 174   4                      // if ((0 == flag_is_recved_rf_data) && /* 如果之前未接收到数据 或是 已经处
-             -理完上一次接收到的数据 */
- 175   4                      //     ((__rf_data & 0xFFFF00) == 0xFFFF00)) /* 如果遥控器的地址码一致 */
- 176   4                      {
- 177   5                          rf_data = __rf_data;
- 178   5                          flag_is_recved_rf_data = 1;
- 179   5                      }
- 180   4                      else
- 181   4                      {
- 182   5                          __rf_data = 0;
- 183   5                      }
- 184   4                  }
- 185   3              }
- 186   2      #endif // rf信号接收 （100us调用一次）
- 187   2      
- 188   2      #if 1                                 // 调节PWM占空比
- 189   2                                            // if (pwm_duty_change_cnt >= 10) // 1000us,1ms
- 190   2              if (pwm_duty_change_cnt >= 5) // 500us
- 191   2              {
- 192   3      
- 193   3                  pwm_duty_change_cnt = 0;
- 194   3      
- 195   3                  if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
- 196   3                  {
- 197   4                      if (limited_adjust_pwm_duty > c_duty)
- 198   4                      {
- 199   5                          c_duty++;
- 200   5                      }
- 201   4                      else if (limited_adjust_pwm_duty < c_duty)
- 202   4                      {
- 203   5                          c_duty--;
- 204   5                      }
- 205   4                      else // 如果相等
- 206   4                      {
- 207   5                      }
- 208   4      
- 209   4                      set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
- 210   4                      set_p15_pwm_duty(c_duty);
- 211   4      
- 212   4                      // if (c_duty <= KNOB_DIMMING_MIN_ADC_VAL) // 小于某个值，直接输出0%占空比，
-             -关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
- 213   4                      if (c_duty <= 0) // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚�
-             -�置为输出模式(尽量小于等于2%的占空比再灭灯)
- 214   4                      {
- 215   5                          // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置
-             -回输出模式，输出低电平
- 216   5                          STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
- 217   5                          FOUT_S16 = GPIO_FOUT_AF_FUNC; //
- 218   5                          P16 = 1;                      // 高电平为关灯
- 219   5                      }
- 220   4                      // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，引脚
-             -配置回PWM
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/03/2025 17:55:46 PAGE 5   
+ 173   4                      // if (0 == flag_is_recved_rf_data) /* 如果之前未接收到数据 或是 已经处理�
+             -��上一次接收到的数据 */
+ 174   4                      {
+ 175   5                          // 现在改为只要收到新的数据，就覆盖rf_data
+ 176   5                          rf_data = __rf_data;
+ 177   5                          flag_is_recved_rf_data = 1;
+ 178   5                      }
+ 179   4                      // else
+ 180   4                      // {
+ 181   4                      //     __rf_data = 0;
+ 182   4                      // }
+ 183   4                  }
+ 184   3              }
+ 185   2      #endif // rf信号接收 （100us调用一次）
+ 186   2      
+ 187   2      #if 1                                 // 调节PWM占空比
+ 188   2                                            // if (pwm_duty_change_cnt >= 10) // 1000us,1ms
+ 189   2              if (pwm_duty_change_cnt >= 5) // 500us
+ 190   2              {
+ 191   3      
+ 192   3                  pwm_duty_change_cnt = 0;
+ 193   3      
+ 194   3                  if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
+ 195   3                  {
+ 196   4                      if (flag_is_pwm_channel_0_enable) // 如果 pwm_channel_0 使能，才调节它的占空�
+             -�
+ 197   4                      {
+ 198   5                          if (limited_adjust_pwm_duty > c_duty)
+ 199   5                          {
+ 200   6                              c_duty++;
+ 201   6                          }
+ 202   5                          else if (limited_adjust_pwm_duty < c_duty)
+ 203   5                          {
+ 204   6                              c_duty--;
+ 205   6                          }
+ 206   5                          else // 如果相等
+ 207   5                          {
+ 208   6                          }
+ 209   5      
+ 210   5                          set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
+ 211   5                          // set_p15_pwm_duty(c_duty);
+ 212   5      
+ 213   5                          // if (c_duty <= KNOB_DIMMING_MIN_ADC_VAL) // 小于某个值，直接输出0%占空�
+             -�，关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
+ 214   5                          if (c_duty <= 0) // 小于某个值，直接输出0%占空比，关闭PWM输出，引�
+             -��配置为输出模式(尽量小于等于2%的占空比再灭灯)
+ 215   5                          {
+ 216   6                              // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚�
+             -�置回输出模式，输出低电平
+ 217   6                              STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
+ 218   6                              FOUT_S16 = GPIO_FOUT_AF_FUNC; //
+ 219   6                              P16 = 1;                      // 高电平为关灯
+ 220   6                          }
+ 221   5                          // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，�
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/04/2025 14:59:14 PAGE 5   
 
- 221   4                      else if (c_duty >= 0) // 大于某个值，再打开PWM，引脚配置回PWM
- 222   4                      {
- 223   5                          FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
- 224   5                          STMR_PWMEN |= 0x01;                // 使能PWM0的输出
- 225   5                      }
- 226   4                  } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
- 227   3      
- 228   3      #if 0
+             -�脚配置回PWM
+ 222   5                          else if (c_duty >= 0) // 大于某个值，再打开PWM，引脚配置回PWM
+ 223   5                          {
+ 224   6                              FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
+ 225   6                              STMR_PWMEN |= 0x01;                // 使能PWM0的输出
+ 226   6                          }
+ 227   5                      }
+ 228   4      
+ 229   4                  } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
+ 230   3      
+ 231   3      #if 0
                           // printf("c_duty %u\n", c_duty);
                           // printf(",c=%u\n", c_duty);
               #endif
- 232   3              }
- 233   2      #endif // 调节PWM占空比
- 234   2          }
- 235   1      
- 236   1          // 退出中断设置IP，不可删除
- 237   1          __IRQnIPnPop(TMR2_IRQn);
- 238   1      }
+ 235   3              }
+ 236   2      #endif // 调节PWM占空比
+ 237   2          }
+ 238   1      
+ 239   1          // 退出中断设置IP，不可删除
+ 240   1          __IRQnIPnPop(TMR2_IRQn);
+ 241   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    772    ----
+   CODE SIZE        =    755    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =     15    ----
    PDATA SIZE       =   ----    ----

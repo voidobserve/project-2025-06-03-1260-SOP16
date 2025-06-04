@@ -36,11 +36,12 @@ void update_max_pwm_duty_coefficient(void)
         // else if (adc_val <= 1278) // 20% 1.52V
         else if (adc_val <= KNOB_DIMMING_ADC_VAL_20_PERCENT) // 20% 1.52V /* 这里用5V作为参考电压 */
         {
-            // 计算采集到的ad值所占20%对应的ad值得占比，再乘以 20%的占空比
+            // 计算采集到的ad值所占20%对应的ad值的占比，再乘以 20%的占空比
             /*
                 计算验证，这里的ad值如果只相差1，占空比的值也只相差1
             */
-            limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY * 2 / 10 / KNOB_DIMMING_ADC_VAL_20_PERCENT;
+            // limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY * 2 / 10 / KNOB_DIMMING_ADC_VAL_20_PERCENT;
+            limited_max_pwm_duty = ((u32)adc_val - KNOB_DIMMING_MIN_ADC_VAL) * MAX_PWM_DUTY * 2 / 10 / KNOB_DIMMING_ADC_VAL_20_PERCENT;
         }
         // else if (adc_val <= 2498) // 40% 2.97V
         else if (adc_val <= KNOB_DIMMING_ADC_VAL_40_PERCENT) // 40% 2.79V /* 这里用5V作为参考电压 */
@@ -85,8 +86,7 @@ void update_max_pwm_duty_coefficient(void)
     }
     else // 如果上一次限制的最大占空比是0，则要等旋钮扭到 xx% 的位置再使能旋钮的功能
     {
-        if (adc_val >= KNOB_DIMMING_ADC_VAL_20_PERCENT)
-        // if (adc_val >= ((KNOB_DIMMING_ADC_VAL_40_PERCENT - KNOB_DIMMING_ADC_VAL_20_PERCENT) / 2 + KNOB_DIMMING_ADC_VAL_20_PERCENT - 260)) // 30%（原来的计算值会偏高，最后减去一些作为补偿）
+        if (adc_val >= KNOB_DIMMING_ADC_VAL_20_PERCENT) // 20%再开灯
         {
             flag_is_last_limited_equal_zero = 0;
         }
@@ -100,3 +100,6 @@ void update_max_pwm_duty_coefficient(void)
 
 #endif
 }
+
+
+

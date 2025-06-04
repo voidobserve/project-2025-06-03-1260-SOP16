@@ -170,17 +170,16 @@ void TIMR2_IRQHandler(void) interrupt TMR2_IRQn
                 high_level_cnt = 0;
 
                 // if (rf_data != 0)
-                if (0 == flag_is_recved_rf_data) /* 如果之前未接收到数据 或是 已经处理完上一次接收到的数据 */
-                // if ((0 == flag_is_recved_rf_data) && /* 如果之前未接收到数据 或是 已经处理完上一次接收到的数据 */
-                //     ((__rf_data & 0xFFFF00) == 0xFFFF00)) /* 如果遥控器的地址码一致 */
+                // if (0 == flag_is_recved_rf_data) /* 如果之前未接收到数据 或是 已经处理完上一次接收到的数据 */
                 {
+                    // 现在改为只要收到新的数据，就覆盖rf_data
                     rf_data = __rf_data;
                     flag_is_recved_rf_data = 1;
                 }
-                else
-                {
-                    __rf_data = 0;
-                }
+                // else
+                // {
+                //     __rf_data = 0;
+                // }
             }
         }
 #endif // rf信号接收 （100us调用一次）
@@ -194,35 +193,39 @@ void TIMR2_IRQHandler(void) interrupt TMR2_IRQn
 
             if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
             {
-                if (limited_adjust_pwm_duty > c_duty)
+                if (flag_is_pwm_channel_0_enable) // 如果 pwm_channel_0 使能，才调节它的占空比
                 {
-                    c_duty++;
-                }
-                else if (limited_adjust_pwm_duty < c_duty)
-                {
-                    c_duty--;
-                }
-                else // 如果相等
-                {
+                    if (limited_adjust_pwm_duty > c_duty)
+                    {
+                        c_duty++;
+                    }
+                    else if (limited_adjust_pwm_duty < c_duty)
+                    {
+                        c_duty--;
+                    }
+                    else // 如果相等
+                    {
+                    }
+
+                    set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
+                    // set_p15_pwm_duty(c_duty);
+
+                    // if (c_duty <= KNOB_DIMMING_MIN_ADC_VAL) // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
+                    if (c_duty <= 0) // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
+                    {
+                        // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置回输出模式，输出低电平
+                        STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
+                        FOUT_S16 = GPIO_FOUT_AF_FUNC; //
+                        P16 = 1;                      // 高电平为关灯
+                    }
+                    // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，引脚配置回PWM
+                    else if (c_duty >= 0) // 大于某个值，再打开PWM，引脚配置回PWM
+                    {
+                        FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
+                        STMR_PWMEN |= 0x01;                // 使能PWM0的输出
+                    }
                 }
 
-                set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
-                set_p15_pwm_duty(c_duty);
-
-                // if (c_duty <= KNOB_DIMMING_MIN_ADC_VAL) // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
-                if (c_duty <= 0) // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
-                {
-                    // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置回输出模式，输出低电平
-                    STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
-                    FOUT_S16 = GPIO_FOUT_AF_FUNC; //
-                    P16 = 1;                      // 高电平为关灯
-                }
-                // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，引脚配置回PWM
-                else if (c_duty >= 0) // 大于某个值，再打开PWM，引脚配置回PWM
-                {
-                    FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
-                    STMR_PWMEN |= 0x01;                // 使能PWM0的输出
-                }
             } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
 
 #if 0

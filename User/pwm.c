@@ -1,15 +1,23 @@
 #include "pwm.h"
 #include "time0.h"
 
-// extern volatile bit flag_is_in_power_on; // 是否处于开机缓启动
+volatile u16 c_duty = 0;                 // 当前设置的占空比
+volatile u16 cur_pwm_channel_1_duty = 0; // 当前设置的第二路PWM的占空比
+volatile u16 adjust_duty = MAX_PWM_DUTY; // 最终要调节成的占空比（只有开机缓启动、温度检测、发送机电压不稳定检测才会修改它的值）
+// volatile u16 max_pwm_duty = MAX_PWM_DUTY;        // 存放占空比的上限值
 
-volatile u16 c_duty = 0;          // 当前设置的占空比
-volatile u16 adjust_duty = 6000;  // 最终要调节成的占空比
-volatile u16 max_pwm_duty = 6000; // 存放占空比的上限值
-// bit jump_flag = 0;
-// bit max_flag = 0; // 最大占空比的标志位
+/*
+    标志位，pwm_channel_0 是否使能（只在rf遥控器调节中使用）
+    默认为1，防止在定时器调节pwm时不工作
+*/
+volatile bit flag_is_pwm_channel_0_enable = 1;
 
-// extern volatile bit flag_is_pin_9_vol_bounce; // 标志位，9脚电压是否发生了跳动（是否因为发动机功率不稳定导致跳动）
+/*
+    标志位，pwm_channel_1 是否使能（只在rf遥控器调节中使用）
+    默认为1，防止在定时器调节pwm时不工作
+*/
+volatile bit flag_is_pwm_channel_1_enable = 1;
+
 #define STMR0_PEROID_VAL (SYSCLK / 8000 - 1)
 #define STMR1_PEROID_VAL (SYSCLK / 8000 - 1)
 void pwm_init(void)
@@ -52,7 +60,7 @@ void pwm_init(void)
     STMR_PWMEN |= STMR_1_PWM_EN(0x1);   // PWM输出使能
 
     P1_MD1 &= ~GPIO_P15_MODE_SEL(0x03); // P15 15脚
-    P1_MD1 |= GPIO_P15_MODE_SEL(0x01); // 输出模式
+    P1_MD1 |= GPIO_P15_MODE_SEL(0x01);  // 输出模式
     FOUT_S15 = GPIO_FOUT_STMR1_PWMOUT;  // 选择stmr1_pwmout
 }
 
@@ -65,7 +73,7 @@ void set_pwm_duty(void)
 }
 
 // 设置P15 15脚的PWM占空比
-void set_p15_pwm_duty(u8 set_duty)
+void set_p15_pwm_duty(u16 set_duty)
 {
     STMR1_CMPAH = STMR_CMPA_VAL_H(((set_duty) >> 8) & 0xFF); // 比较值
     STMR1_CMPAL = STMR_CMPA_VAL_L(((set_duty) >> 0) & 0xFF); // 比较值
@@ -327,104 +335,75 @@ void according_pin9_to_adjust_pin16(void)
     }
 }
 
-// 缓慢调节占空比（缓慢提升和缓慢下降）
-void Adaptive_Duty(void)
+/**
+ * @brief 获取第一路PWM的运行状态
+ *
+ * @return u8 0--pwm关闭，1--pwm开启
+ */
+u8 get_pwm_channel_0_status(void)
 {
-#if 0  // 缓慢调节占空比的版本：
-    if (c_duty > adjust_duty)
+    if (STMR_PWMEN & 0x01) // 如果pwm0使能
     {
-        c_duty--;
+        return 1;
     }
-    if (c_duty < adjust_duty)
+    else // 如果pwm0未使能
     {
-        c_duty++;
+        return 0;
     }
-    set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
-
-    if (c_duty >= 5800)
-    {
-
-        // delay_ms(15); // 时间还需要测试调整一下
-        delay_ms(7);
-    }
-    else
-    {
-        // delay_ms(5);
-        delay_ms(3);
-    }
-#endif // 缓慢调节占空比的版本
-
-#if 0 // 立即调节占空比的版本：
-
-    // adjust_duty = adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY ; /* 不能这么计算，会越来越小 */
-
-    c_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
-    set_pwm_duty();                                                       // 函数内部会将 c_duty 的值代入相关寄存器中
-
-#if USE_MY_DEBUG
-    // printf(",c=%u,", c_duty);
-
-    {
-        static u8 cnt = 0;
-        cnt++;
-        if (cnt >= 200)
-        {
-            cnt = 0;
-            // printf("c_duty %u\n", c_duty);
-        }
-    }
-
-#endif
-
-#endif // 立即调节占空比的版本
-
-    /*
-       减少分级之后，还是会出现相邻的级别之间来回变化，
-       这里加上缓慢调节占空比的功能
-    */
-#if 0
-    
-
-    // if (limited_max_pwm_duty != last_limited_max_pwm_duty) // 如果限制的最大占空比发生变化
-    // if (flag_is_knob_change)
-    {
-        // 这里由定时器来调节
-    }
-    // else // 如果限制的最大占空比未发生变化
-    {
-        
-        {// 下面的语句，如果突然调大又调小旋钮，会导致灯光闪烁，突然调小又调大也是这样：
-            // c_duty = (u32)adjust_duty * last_limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
-            // c_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
-        }
-        
-    }
-
-    // set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
-
-    // 可以让定时器来控制：
-    // if (0 == flag_is_in_power_on) // 如果不处于开机缓启动
-    // {
-    //     if (c_duty <= KNOB_DIMMING_MIN_ADC_VAL) // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
-    //     {
-    //         // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置回输出模式，输出低电平
-    //         STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
-    //         FOUT_S16 = GPIO_FOUT_AF_FUNC; //
-    //         P16 = 1;                      // 高电平为关灯(还未确定)
-    //     }
-    //     else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，引脚配置回PWM
-    //     {
-    //         FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
-    //         STMR_PWMEN |= 0x01;                // 使能PWM0的输出
-    //     }
-    // }
-
-
-    // printf("c_duty %u\n", c_duty);
-#endif //
 }
 
-// void pwm_adjust(void)
-// {
+/**
+ * @brief 获取第二路PWM的运行状态
+ *
+ * @return u8 0--pwm关闭，1--pwm开启
+ */
+u8 get_pwm_channel_1_status(void)
+{
+    if (STMR_PWMEN & (0x01 << 1)) // 如果pwm1使能
+    {
+        return 1;
+    }
+    else // 如果 pwm 未使能
+    {
+        return 0;
+    }
+}
 
-// }
+void pwm_channel_0_enable(void)
+{
+    // 要先使能PWM输出，在配置IO，否则在逻辑分析仪上看会有个缺口
+    STMR_PWMEN |= 0x01;                // 使能PWM0的输出
+    FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
+}
+
+void pwm_channel_0_disable(void)
+{
+    // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置回输出模式
+    STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
+    FOUT_S16 = GPIO_FOUT_AF_FUNC; //
+    P16 = 1;                      // 高电平为关灯
+}
+
+void pwm_channel_1_enable(void)
+{
+    // 要先使能PWM输出，在配置IO，否则在逻辑分析仪上看会有个缺口
+    STMR_PWMEN |= 0x01 << 1;           // 使能PWM1的输出
+    FOUT_S15 = GPIO_FOUT_STMR1_PWMOUT; // stmr1_pwmout
+}
+
+void pwm_channel_1_disable(void)
+{
+    // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置回输出模式
+    STMR_PWMEN &= ~(0x01 << 1);   // 不使能PWM1的输出
+    FOUT_S15 = GPIO_FOUT_AF_FUNC; //
+    P15 = 1;                      // 高电平为关灯
+}
+
+// void alter_adjust_pwm_duty(u16 set_pwm_duty)
+
+void set_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty)
+{
+    adjust_duty = pwm_adjust_duty; // 设定目标占空比
+    // 根据设定的目标占空比，更新经过旋钮限制之后的目标占空比：
+    limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
+}

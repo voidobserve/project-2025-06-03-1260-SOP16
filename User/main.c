@@ -56,7 +56,7 @@ void my_debug_config(void)
 
     P0_MD0 &= (GPIO_P00_MODE_SEL(0x3));
     P0_MD0 |= GPIO_P00_MODE_SEL(0x1);            // 配置为输出模式
-    FOUT_S00|= GPIO_FOUT_UART0_TX;              // 配置为UART0_TX
+    FOUT_S00 |= GPIO_FOUT_UART0_TX;              // 配置为UART0_TX
     UART0_BAUD1 = (USER_UART0_BAUD >> 8) & 0xFF; // 配置波特率高八位
     UART0_BAUD0 = USER_UART0_BAUD & 0xFF;        // 配置波特率低八位
     UART0_CON0 = UART_STOP_BIT(0x0) |
@@ -128,13 +128,16 @@ void main(void)
     timer2_config();
 #endif
 
+    rf_recv_init(); // rf功能初始化
+
     // adc_sel_pin(ADC_SEL_PIN_GET_VOL); // 切换到9脚，准备检测9脚的电压
 
+    limited_max_pwm_duty = MAX_PWM_DUTY;
+    limited_adjust_pwm_duty = MAX_PWM_DUTY;
 // ===================================================================
-#if 0        // 开机缓慢启动（PWM信号变化平缓）
+#if 0 // 开机缓慢启动（PWM信号变化平缓）
     P14 = 0; // 16脚先输出低电平
     c_duty = 0;
-    limited_max_pwm_duty = MAX_PWM_DUTY;
     flag_is_in_power_on = 1; // 表示到了开机缓启动
     // while (c_duty < 6000)
     while (c_duty < limited_max_pwm_duty) // 当c_duty 大于 限制的最大占空比后，退出
@@ -183,6 +186,8 @@ void main(void)
     }
 #endif // 开机缓慢启动（PWM信号变化平缓）
 
+MY_DEBUG:
+    c_duty = MAX_PWM_DUTY; // 测试用
     adjust_duty = c_duty;    // 缓启动后，立即更新 adjust_duty 的值
     flag_is_in_power_on = 0; // 表示退出了开机缓启动
     // ===================================================================
@@ -201,9 +206,9 @@ void main(void)
     {
 
 #if 1
-        adc_update_pin_9_adc_val(); // 采集并更新9脚的ad值
-        update_max_pwm_duty_coefficient();
-        temperature_scan();               // 检测热敏电阻一端的电压值
+        adc_update_pin_9_adc_val(); // 采集并更新9脚的ad值（9脚，检测发动机功率是否稳定的引脚）
+        // update_max_pwm_duty_coefficient();
+        // temperature_scan();               // 检测热敏电阻一端的电压值
         set_duty();                       // 设定到要调节到的脉宽
         according_pin9_to_adjust_pin16(); // 根据9脚的电压来设定16脚的电平
 
@@ -214,22 +219,20 @@ void main(void)
 
 #endif
 
-        if (flag_is_recved_rf_data)
+        // if (flag_is_recved_rf_data)
+        // {
+        //     flag_is_recved_rf_data = 0;
+
+        //     printf("recv data: 0x %lx\n", rf_data);
+        // }
+
         {
-            flag_is_recved_rf_data = 0;
-
-            printf("recv data: 0x %lx\n", rf_data);
+            if (flag_is_rf_enable) // 如果使能了rf遥控器的功能
+            {
+                key_driver_scan(&rf_key_para);
+                rf_key_handle();
+            }
         }
-
-        /*
-            下面让定时器来调节，每隔500us检测一次，会导致灯光闪烁：
-            // c_duty = MAX_PWM_DUTY * 1 / 100;
-            // delay_ms(300);
-            // c_duty = 0;
-            // delay_ms(300);
-        */
-
-        // P13 = ~P13;
     }
 }
 

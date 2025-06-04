@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/03/2025 17:55:46 PAGE 1   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE RF_RECV
@@ -11,25 +11,391 @@ line level    source
 
    1          #include "rf_recv.h"
    2          
-   3          volatile bit flag_is_recved_rf_data = 0; // 是否接收到了rf信号
-   4          volatile u32 rf_data = 0; // 存放接收到的rf数据
-   5          
-   6          void rf_recv_init(void)
-   7          {
-   8   1          P0_PU |= GPIO_P01_PULL_UP(0x01); // 上拉
-   9   1          P0_MD0 &= ~(GPIO_P01_MODE_SEL(0x03)); // 输入模式
-  10   1      }
+   3          volatile bit flag_is_rf_enable = 0;      // 标志位，是否使能rf遥控器的功能
+   4          volatile bit flag_is_recved_rf_data = 0; // 是否接收到了rf信号
+   5          volatile u32 rf_data = 0;                // 存放接收到的rf数据
+   6          
+   7          // // 将按键键值与
+   8          // static const u8 rf_key_map_table[][2] =
+   9          // {
+  10          
+  11          // }
+  12          
+  13          // 定义触摸按键的按键事件
+  14          enum RF_KEY_EVENT
+  15          {
+  16              RF_KEY_EVENT_NONE = 0,
+  17              RF_KEY_EVENT_ID_1_CLICK,
+  18              RF_KEY_EVENT_ID_1_LONG,
+  19              RF_KEY_EVENT_ID_1_HOLD,
+  20              RF_KEY_EVENT_ID_1_LOOSE,
+  21          
+  22              RF_KEY_EVENT_ID_2_CLICK,
+  23              RF_KEY_EVENT_ID_2_LONG,
+  24              RF_KEY_EVENT_ID_2_HOLD,
+  25              RF_KEY_EVENT_ID_2_LOOSE,
+  26          
+  27              RF_KEY_EVENT_ID_3_CLICK,
+  28              RF_KEY_EVENT_ID_3_LONG,
+  29              RF_KEY_EVENT_ID_3_HOLD,
+  30              RF_KEY_EVENT_ID_3_LOOSE,
+  31          
+  32              RF_KEY_EVENT_ID_4_CLICK,
+  33              RF_KEY_EVENT_ID_4_LONG,
+  34              RF_KEY_EVENT_ID_4_HOLD,
+  35              RF_KEY_EVENT_ID_4_LOOSE,
+  36          
+  37              RF_KEY_EVENT_ID_5_CLICK,
+  38              RF_KEY_EVENT_ID_5_LONG,
+  39              RF_KEY_EVENT_ID_5_HOLD,
+  40              RF_KEY_EVENT_ID_5_LOOSE,
+  41          
+  42              RF_KEY_EVENT_ID_6_CLICK,
+  43              RF_KEY_EVENT_ID_6_LONG,
+  44              RF_KEY_EVENT_ID_6_HOLD,
+  45              RF_KEY_EVENT_ID_6_LOOSE,
+  46          
+  47              RF_KEY_EVENT_ID_7_CLICK,
+  48              RF_KEY_EVENT_ID_7_LONG,
+  49              RF_KEY_EVENT_ID_7_HOLD,
+  50              RF_KEY_EVENT_ID_7_LOOSE,
+  51          
+  52              RF_KEY_EVENT_ID_8_CLICK,
+  53              RF_KEY_EVENT_ID_8_LONG,
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 2   
+
+  54              RF_KEY_EVENT_ID_8_HOLD,
+  55              RF_KEY_EVENT_ID_8_LOOSE,
+  56          
+  57              RF_KEY_EVENT_ID_9_CLICK,
+  58              RF_KEY_EVENT_ID_9_LONG,
+  59              RF_KEY_EVENT_ID_9_HOLD,
+  60              RF_KEY_EVENT_ID_9_LOOSE,
+  61          
+  62              RF_KEY_EVENT_ID_10_CLICK,
+  63              RF_KEY_EVENT_ID_10_LONG,
+  64              RF_KEY_EVENT_ID_10_HOLD,
+  65              RF_KEY_EVENT_ID_10_LOOSE,
+  66          
+  67              RF_KEY_EVENT_ID_11_CLICK,
+  68              RF_KEY_EVENT_ID_11_LONG,
+  69              RF_KEY_EVENT_ID_11_HOLD,
+  70              RF_KEY_EVENT_ID_11_LOOSE,
+  71          
+  72              RF_KEY_EVENT_ID_12_CLICK,
+  73              RF_KEY_EVENT_ID_12_LONG,
+  74              RF_KEY_EVENT_ID_12_HOLD,
+  75              RF_KEY_EVENT_ID_12_LOOSE,
+  76          };
+  77          
+  78          #define RF_KEY_EFFECT_EVENT_NUMS (4) // 单个触摸按键的有效按键事件个数 (单击、长按、�
+             -��续、松开)
+  79          // 将按键id和按键事件绑定起来，在 xx 函数中，通过查表的方式得到按键事件
+  80          static const u8 rf_key_event_table[][RF_KEY_EFFECT_EVENT_NUMS + 1] = {
+  81              // [0]--按键对应的id号，用于查表，[1]、[2]、[3]...--用于与 key_driver.h 中定义的�
+             -��键事件KEY_EVENT绑定关系(一定要一一对应)
+  82              {RF_KEY_ID_1, RF_KEY_EVENT_ID_1_CLICK, RF_KEY_EVENT_ID_1_LONG, RF_KEY_EVENT_ID_1_HOLD, RF_KEY_EVENT_ID
+             -_1_LOOSE},      //
+  83              {RF_KEY_ID_2, RF_KEY_EVENT_ID_2_CLICK, RF_KEY_EVENT_ID_2_LONG, RF_KEY_EVENT_ID_2_HOLD, RF_KEY_EVENT_ID
+             -_2_LOOSE},      //
+  84              {RF_KEY_ID_3, RF_KEY_EVENT_ID_3_CLICK, RF_KEY_EVENT_ID_3_LONG, RF_KEY_EVENT_ID_3_HOLD, RF_KEY_EVENT_ID
+             -_3_LOOSE},      //
+  85              {RF_KEY_ID_4, RF_KEY_EVENT_ID_4_CLICK, RF_KEY_EVENT_ID_4_LONG, RF_KEY_EVENT_ID_4_HOLD, RF_KEY_EVENT_ID
+             -_4_LOOSE},      //
+  86              {RF_KEY_ID_5, RF_KEY_EVENT_ID_5_CLICK, RF_KEY_EVENT_ID_5_LONG, RF_KEY_EVENT_ID_5_HOLD, RF_KEY_EVENT_ID
+             -_5_LOOSE},      //
+  87              {RF_KEY_ID_6, RF_KEY_EVENT_ID_6_CLICK, RF_KEY_EVENT_ID_6_LONG, RF_KEY_EVENT_ID_6_HOLD, RF_KEY_EVENT_ID
+             -_6_LOOSE},      //
+  88              {RF_KEY_ID_7, RF_KEY_EVENT_ID_7_CLICK, RF_KEY_EVENT_ID_7_LONG, RF_KEY_EVENT_ID_7_HOLD, RF_KEY_EVENT_ID
+             -_7_LOOSE},      //
+  89              {RF_KEY_ID_8, RF_KEY_EVENT_ID_8_CLICK, RF_KEY_EVENT_ID_8_LONG, RF_KEY_EVENT_ID_8_HOLD, RF_KEY_EVENT_ID
+             -_8_LOOSE},      //
+  90              {RF_KEY_ID_9, RF_KEY_EVENT_ID_9_CLICK, RF_KEY_EVENT_ID_9_LONG, RF_KEY_EVENT_ID_9_HOLD, RF_KEY_EVENT_ID
+             -_9_LOOSE},      //
+  91              {RF_KEY_ID_10, RF_KEY_EVENT_ID_10_CLICK, RF_KEY_EVENT_ID_10_LONG, RF_KEY_EVENT_ID_10_HOLD, RF_KEY_EVEN
+             -T_ID_10_LOOSE}, //
+  92              {RF_KEY_ID_11, RF_KEY_EVENT_ID_11_CLICK, RF_KEY_EVENT_ID_11_LONG, RF_KEY_EVENT_ID_11_HOLD, RF_KEY_EVEN
+             -T_ID_11_LOOSE}, //
+  93              {RF_KEY_ID_12, RF_KEY_EVENT_ID_12_CLICK, RF_KEY_EVENT_ID_12_LONG, RF_KEY_EVENT_ID_12_HOLD, RF_KEY_EVEN
+             -T_ID_12_LOOSE}, //
+  94          };
+  95          
+  96          extern u8 rf_key_get_key_id(void);
+  97          volatile struct key_driver_para rf_key_para = {
+  98              // 编译器不支持指定成员赋值的写法，会报错：
+  99              // .scan_times = 10,   // 扫描频率，单位：ms
+ 100              // .last_key = NO_KEY, // 上一次得到的按键键值，初始化为无效的键值
+ 101              // // .filter_value = NO_KEY, // 按键消抖期间得到的键值(在key_driver_scan()函数中使用
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 3   
+
+             -)，初始化为 NO_KEY
+ 102              // // .filter_cnt = 0, // 按键消抖期间的累加值(在key_driver_scan()函数中使用)，初始
+             -化为0
+ 103              // .filter_time = 3,       // 按键消抖次数，与扫描频率有关
+ 104              // .long_time = 50,        // 判定按键是长按对应的数量，与扫描频率有关
+ 105              // .hold_time = (75 + 15), // 判定按键是HOLD对应的数量，与扫描频率有关
+ 106              // // .press_cnt = 0, // 与long_time和hold_time对比, 判断长按事件和HOLD事件
+ 107              // // .click_cnt = 0,
+ 108              // .click_delay_time = 20, // 按键抬起后，等待连击的数量，与扫描频率有关
+ 109              // // .notify_value = 0,
+ 110              // .key_type = KEY_TYPE_AD, // 按键类型为ad按键
+ 111              // .get_value = ad_key_get_key_id,
+ 112          
+ 113              // .latest_key_val = AD_KEY_ID_NONE,
+ 114              // .latest_key_event = KEY_EVENT_NONE,
+ 115          
+ 116              RF_KEY_SCAN_CIRCLE_TIMES, // .scan_times 扫描频率，单位：ms
+ 117              0,                        // .cur_scan_times 按键扫描频率, 单位ms，由1ms的定时器中断�
+             -�累加，在key_driver_scan()中清零
+ 118              // NO_KEY,
+ 119              0, // .last_key
+ 120          
+ 121              0,                   // .filter_value
+ 122              0,                   // .filter_cnt
+ 123              RF_KEY_FILTER_TIMES, // .filter_time 按键消抖次数，与扫描频率有关（rf按键不消抖）
+ 124          
+ 125              RF_LONG_PRESS_TIME_THRESHOLD_MS / RF_KEY_SCAN_CIRCLE_TIMES,                                     // .lo
+             -ng_time
+ 126              (RF_LONG_PRESS_TIME_THRESHOLD_MS + RF_HOLD_PRESS_TIME_THRESHOLD_MS) / RF_KEY_SCAN_CIRCLE_TIMES, // .ho
+             -ld_time
+ 127              0,                                                                                              // .pr
+             -ess_cnt
+ 128          
+ 129              0,                              // .click_cnt
+ 130              0,                              // .click_delay_cnt
+ 131              200 / RF_KEY_SCAN_CIRCLE_TIMES, // .click_delay_time
+ 132              // NO_KEY,
+ 133              0,                 // .notify_value
+ 134              KEY_TYPE_RF,       // .key_type
+ 135              rf_key_get_key_id, // .get_value
+ 136          
+ 137              RF_KEY_ID_NONE, // .latest_key_val
+ 138              KEY_EVENT_NONE, // .latest_key_event
+ 139          }; // volatile struct key_driver_para rf_key_para
+ 140          
+ 141          static u8 rf_key_get_key_id(void)
+ 142          {
+ 143   1          if (flag_is_recved_rf_data)
+ 144   1          {
+ 145   2              flag_is_recved_rf_data = 0;
+ 146   2              if (rf_data)
+ 147   2              {
+ 148   3                  u8 ret = (u8)rf_data;
+ 149   3                  rf_data = 0;
+ 150   3                  return (u8)ret; // 直接获取键值
+ 151   3              }
+ 152   2              else
+ 153   2              {
+ 154   3                  return NO_KEY;
+ 155   3              }
+ 156   2          }
+ 157   1          else
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 4   
+
+ 158   1          {
+ 159   2              return NO_KEY;
+ 160   2          }
+ 161   1      }
+ 162          
+ 163          /**
+ 164           * @brief 将按键值和 key_driver_scan 得到的按键事件转换成触摸按键的事件
+ 165           *
+ 166           * @param key_val 触摸按键键值
+ 167           * @param key_event 在key_driver_scan得到的按键事件 KEY_EVENT
+ 168           * @return u8 在 rf_key_event_table 中找到的对应的按键事件，如果没有则返回 RF_KEY_EVEN
+             -T_NONE
+ 169           */
+ 170          static u8 __rf_key_get_event(const u8 key_val, const u8 key_event)
+ 171          {
+ 172   1          volatile u8 ret_key_event = RF_KEY_EVENT_NONE;
+ 173   1          u8 i = 0;
+ 174   1          for (; i < ARRAY_SIZE(rf_key_event_table); i++)
+ 175   1          {
+ 176   2              // 如果往 KEY_EVENT 枚举中添加了新的按键事件，这里查表的方法就会失效，
+             -需要手动修改
+ 177   2              if (key_val == rf_key_event_table[i][0])
+ 178   2              {
+ 179   3                  ret_key_event = rf_key_event_table[i][key_event];
+ 180   3                  break;
+ 181   3              }
+ 182   2          }
+ 183   1      
+ 184   1          return ret_key_event;
+ 185   1      }
+ 186          
+ 187          void rf_key_handle(void)
+ 188          {
+ 189   1          u8 rf_key_event = RF_KEY_EVENT_NONE;
+ 190   1      
+ 191   1          if (rf_key_para.latest_key_val == RF_KEY_ID_NONE)
+ 192   1          {
+ 193   2              return;
+ 194   2          }
+ 195   1      
+ 196   1          rf_key_event = __rf_key_get_event(rf_key_para.latest_key_val, rf_key_para.latest_key_event);
+ 197   1          rf_key_para.latest_key_val = RF_KEY_ID_NONE;
+ 198   1          rf_key_para.latest_key_event = KEY_EVENT_NONE;
+ 199   1      
+ 200   1          switch (rf_key_event)
+ 201   1          {
+ 202   2          case RF_KEY_EVENT_ID_1_CLICK:
+ 203   2      
+ 204   2              printf("key 1 click\n");
+ 205   2      
+ 206   2              break;
+ 207   2      
+ 208   2          case RF_KEY_EVENT_ID_2_CLICK:
+ 209   2      
+ 210   2              printf("key 2 click\n");
+ 211   2      
+ 212   2              break;
+ 213   2      
+ 214   2          case RF_KEY_EVENT_ID_3_CLICK:
+ 215   2      
+ 216   2              printf("key 3 click\n");
+ 217   2      
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 5   
+
+ 218   2              break;
+ 219   2      
+ 220   2          case RF_KEY_EVENT_ID_4_CLICK:
+ 221   2      
+ 222   2              printf("key 4 click\n");
+ 223   2      
+ 224   2              break;
+ 225   2      
+ 226   2          case RF_KEY_EVENT_ID_5_CLICK:
+ 227   2      
+ 228   2              printf("key 5 click\n");
+ 229   2      
+ 230   2              break;
+ 231   2      
+ 232   2          case RF_KEY_EVENT_ID_6_CLICK:
+ 233   2      
+ 234   2              printf("key 6 click\n");
+ 235   2      
+ 236   2              break;
+ 237   2      
+ 238   2          case RF_KEY_EVENT_ID_7_CLICK:
+ 239   2      
+ 240   2              printf("key 7 click\n");
+ 241   2      
+ 242   2              break;
+ 243   2      
+ 244   2          case RF_KEY_EVENT_ID_8_CLICK:
+ 245   2      
+ 246   2              printf("key 8 click\n");
+ 247   2      
+ 248   2              break;
+ 249   2      
+ 250   2          case RF_KEY_EVENT_ID_9_CLICK:
+ 251   2      
+ 252   2              printf("key 9 click\n");
+ 253   2      
+ 254   2              break;
+ 255   2      
+ 256   2          case RF_KEY_EVENT_ID_10_CLICK:
+ 257   2      
+ 258   2              printf("key 10 click\n");
+ 259   2              if (flag_is_pwm_channel_0_enable) // 如果已经开机/由遥控器开机
+ 260   2              {
+ 261   3                  // c_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限
+             -制的占空比系数
+ 262   3                  adjust_duty = PWM_DUTY_50_PERCENT;
+ 263   3                  limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_du
+             -ty * 旋钮限制的占空比系数
+ 264   3                  c_duty = limited_adjust_pwm_duty;
+ 265   3                  set_pwm_duty();
+ 266   3              }
+ 267   2      
+ 268   2              break;
+ 269   2      
+ 270   2          case RF_KEY_EVENT_ID_11_CLICK:
+ 271   2      
+ 272   2              printf("key 11 click\n");
+ 273   2      
+ 274   2              break;
+ 275   2      
+ 276   2          case RF_KEY_EVENT_ID_12_CLICK: // 控制 pwm_channel_0 开关的按键
+ 277   2      
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 6   
+
+ 278   2              // printf("key 12 click\n");
+ 279   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 280   2              {
+ 281   3                  flag_is_pwm_channel_0_enable = 0; // 禁止timer2调节pwm
+ 282   3                  // limited_adjust_pwm_duty = 0;
+ 283   3                  adjust_duty = 0;
+ 284   3                  c_duty = 0;
+ 285   3                  pwm_channel_0_disable();
+ 286   3                  set_pwm_duty();
+ 287   3                  printf("pwm channel 0 is disable\n");
+ 288   3              }
+ 289   2              else // 如果PWM未使能
+ 290   2              {
+ 291   3                  flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
+ 292   3                  adjust_duty = MAX_PWM_DUTY;
+ 293   3                  limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_du
+             -ty * 旋钮限制的占空比系数
+ 294   3                  c_duty = limited_adjust_pwm_duty;
+ 295   3                  set_pwm_duty();
+ 296   3                  pwm_channel_0_enable();
+ 297   3                  printf("pwm channel 0 is enable\n");
+ 298   3              }
+ 299   2      
+ 300   2              break;
+ 301   2      
+ 302   2          case RF_KEY_EVENT_ID_12_HOLD:
+ 303   2      
+ 304   2              printf("key 12 hold\n");
+ 305   2      
+ 306   2              break;
+ 307   2      
+ 308   2          default:
+ 309   2              break;
+ 310   2          }
+ 311   1      }
+ 312          
+ 313          void rf_recv_init(void)
+ 314          {
+ 315   1      #if 1 // 测试时使用，在开发板上使用 P01 脚，用于检测rf信号
+ 316   1      
+ 317   1          P0_PU |= GPIO_P01_PULL_UP(0x01);      // 上拉
+ 318   1          P0_MD0 &= ~(GPIO_P01_MODE_SEL(0x03)); // 输入模式
+ 319   1      
+ 320   1      #endif // 测试时使用
+ 321   1      
+ 322   1          // 检测有无433遥控器功能的引脚：
+ 323   1          P1_PU |= GPIO_P11_PULL_UP(0x01);      // 上拉
+ 324   1          P1_MD0 &= ~(GPIO_P11_MODE_SEL(0x03)); // 输入模式
+ 325   1      
+ 326   1          if (0 == RF_ENABLE_PIN) // 检测脚接了0R电阻到GND，说明有433遥控器的功能
+ 327   1          {
+ 328   2              flag_is_rf_enable = 1;
+ 329   2          }
+ 330   1          else // 检测脚未接0R电阻，说明没有433遥控器的功能
+ 331   1          {
+ 332   2              flag_is_rf_enable = 0;
+ 333   2          }
+ 334   1      
+ 335   1      MY_DEBUG:
+ 336   1          flag_is_rf_enable = 1; // 测试时使用
+ 337   1          // flag_is_rf_enable = 0; // 测试时使用
+ 338   1      }
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 7   
+
+*** WARNING C280 IN LINE 335 OF ..\..\User\rf_recv.c: 'MY_DEBUG': unreferenced label
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =     13    ----
-   CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =      4    ----
+   CODE SIZE        =    523    ----
+   CONSTANT SIZE    =    209    ----
+   XDATA SIZE       =     83       2
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =      1    ----
+   BIT SIZE         =      2    ----
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

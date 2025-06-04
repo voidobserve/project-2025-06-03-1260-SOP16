@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TIME0                                                             06/03/2025 17:55:45 PAGE 1   
+C51 COMPILER V9.60.7.0   TIME0                                                             06/04/2025 14:59:13 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIME0
@@ -62,7 +62,7 @@ line level    source
   49   1          // 清除定时器的计数值
   50   1          TMR0_CNTL = 0;
   51   1          TMR0_CNTH = 0;
-C51 COMPILER V9.60.7.0   TIME0                                                             06/03/2025 17:55:45 PAGE 2   
+C51 COMPILER V9.60.7.0   TIME0                                                             06/04/2025 14:59:13 PAGE 2   
 
   52   1      
   53   1          __DisableIRQ(TMR0_IRQn); // 关闭中断（不使能中断）
@@ -96,15 +96,20 @@ line level    source
   81   3                  cnt_during_power_on = 0;
   82   3                  flag_time_comes_during_power_on = 1; // 开机缓启动期间，控制每次调节PWM占空比的时间
   83   3              }
-  84   2          }
-  85   1      
-  86   1          // 退出中断设置IP，不可删除
-  87   1          __IRQnIPnPop(TMR0_IRQn);
-  88   1      }
+  84   2      
+  85   2              if (rf_key_para.cur_scan_times < 255)
+  86   2              {
+  87   3                  rf_key_para.cur_scan_times++;
+  88   3              }
+  89   2          }
+  90   1      
+  91   1          // 退出中断设置IP，不可删除
+  92   1          __IRQnIPnPop(TMR0_IRQn);
+  93   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    131    ----
+   CODE SIZE        =    143    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =      2    ----
    PDATA SIZE       =   ----    ----
