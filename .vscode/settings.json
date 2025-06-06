@@ -4,6 +4,7 @@
         "my_config.h": "c",
         "rf_recv.h": "c",
         "debug.h": "c",
-        "include.h": "c"
+        "include.h": "c",
+        "pwm.h": "c"
     }
 }

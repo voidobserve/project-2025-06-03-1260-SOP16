@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   ADC                                                               06/04/2025 14:59:13 PAGE 1   
+C51 COMPILER V9.60.7.0   ADC                                                               06/05/2025 17:34:21 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE ADC
@@ -62,7 +62,7 @@ line level    source
              -��，清除选择的参考电压
   50   2              ADC_ACON1 |= ADC_VREF_SEL(0x6) |                                         // 选择内部参考电�
              -��VCCA
-C51 COMPILER V9.60.7.0   ADC                                                               06/04/2025 14:59:13 PAGE 2   
+C51 COMPILER V9.60.7.0   ADC                                                               06/05/2025 17:34:21 PAGE 2   
 
   51   2                           ADC_TEN_SEL(0x3);                                           // 关闭测试信号
   52   2              ADC_ACON0 = ADC_CMP_EN(0x1) |                                            // 打开ADC中的CMP使�
@@ -126,7 +126,7 @@ line level    source
  106          //         ;                                             // 等待转换完成
  107          //     adc0_val = (ADC_DATAH0 << 4) | (ADC_DATAL0 >> 4); // 读取channel0的值
  108          //     ADC_STA = ADC_CHAN0_DONE(0x1);                    // 清除ADC0转换完成标志位
-C51 COMPILER V9.60.7.0   ADC                                                               06/04/2025 14:59:13 PAGE 3   
+C51 COMPILER V9.60.7.0   ADC                                                               06/05/2025 17:34:21 PAGE 3   
 
  109          // }
  110          
@@ -190,7 +190,7 @@ line level    source
              -�，再重启（重新上电）
  167   1          if (TEMP_75_5_MIN == temp_status)
  168   1          {
-C51 COMPILER V9.60.7.0   ADC                                                               06/04/2025 14:59:13 PAGE 4   
+C51 COMPILER V9.60.7.0   ADC                                                               06/05/2025 17:34:21 PAGE 4   
 
  169   2              return;
  170   2          }
@@ -254,7 +254,7 @@ line level    source
  227   2      
  228   2              if (0 == tmr1_is_open)
  229   2              {
-C51 COMPILER V9.60.7.0   ADC                                                               06/04/2025 14:59:13 PAGE 5   
+C51 COMPILER V9.60.7.0   ADC                                                               06/05/2025 17:34:21 PAGE 5   
 
  230   3                  tmr1_is_open = 1;
  231   3                  tmr1_cnt = 0;
@@ -318,7 +318,7 @@ line level    source
  287          // 根据温度（电压值扫描）或9脚的状态来设定占空比
  288          void set_duty(void)
  289          {
-C51 COMPILER V9.60.7.0   ADC                                                               06/04/2025 14:59:13 PAGE 6   
+C51 COMPILER V9.60.7.0   ADC                                                               06/05/2025 17:34:21 PAGE 6   
 
  290   1          // static bit tmr0_is_open = 0;
  291   1      
@@ -382,7 +382,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =      4      20
    PDATA SIZE       =   ----    ----
-C51 COMPILER V9.60.7.0   ADC                                                               06/04/2025 14:59:13 PAGE 7   
+C51 COMPILER V9.60.7.0   ADC                                                               06/05/2025 17:34:21 PAGE 7   
 
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

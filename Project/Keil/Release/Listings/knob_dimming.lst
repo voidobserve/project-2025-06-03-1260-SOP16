@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/04/2025 14:59:14 PAGE 1   
+C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/05/2025 17:34:21 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE KNOB_DIMMING
@@ -62,7 +62,7 @@ line level    source
   44   3                  limited_max_pwm_duty = ((u32)adc_val - KNOB_DIMMING_MIN_ADC_VAL) * MAX_PWM_DUTY * 2 / 10 / KNO
              -B_DIMMING_ADC_VAL_20_PERCENT;
   45   3              }
-C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/04/2025 14:59:14 PAGE 2   
+C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/05/2025 17:34:21 PAGE 2   
 
   46   2              // else if (adc_val <= 2498) // 40% 2.97V
   47   2              else if (adc_val <= KNOB_DIMMING_ADC_VAL_40_PERCENT) // 40% 2.79V /* 这里用5V作为参考电压
@@ -114,23 +114,24 @@ line level    source
              -��的功能
   88   1          {
   89   2              if (adc_val >= KNOB_DIMMING_ADC_VAL_20_PERCENT) // 20%再开灯
-  90   2              // if (adc_val >= ((KNOB_DIMMING_ADC_VAL_40_PERCENT - KNOB_DIMMING_ADC_VAL_20_PERCENT) / 2 + KNOB_
-             -DIMMING_ADC_VAL_20_PERCENT - 260)) // 30%（原来的计算值会偏高，最后减去一些作为补偿）
-  91   2              {
-  92   3                  flag_is_last_limited_equal_zero = 0;
-  93   3              }
-  94   2          }
-  95   1      
-  96   1      #if USE_MY_DEBUG
-  97   1      
-  98   1          // printf("cur_level %u\n", knob_dimming_cur_level);
-  99   1      
- 100   1      #endif // #if USE_MY_DEBUG
-C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/04/2025 14:59:14 PAGE 3   
+  90   2              {
+  91   3                  flag_is_last_limited_equal_zero = 0;
+  92   3              }
+  93   2          }
+  94   1      
+  95   1      #if USE_MY_DEBUG
+  96   1      
+  97   1          // printf("cur_level %u\n", knob_dimming_cur_level);
+  98   1      
+  99   1      #endif // #if USE_MY_DEBUG
+ 100   1      
+ 101   1      #endif
+C51 COMPILER V9.60.7.0   KNOB_DIMMING                                                      06/05/2025 17:34:21 PAGE 3   
 
- 101   1      
- 102   1      #endif
- 103   1      }
+ 102   1      }
+ 103          
+ 104          
+ 105          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE

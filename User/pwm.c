@@ -1,7 +1,15 @@
 #include "pwm.h"
 #include "time0.h"
 
+// 由温度限制的PWM占空比 （对所有PWM通道都生效，默认为最大占空比）
+volatile u16 limited_pwm_duty_due_to_temp = MAX_PWM_DUTY; 
+
 volatile u16 c_duty = 0;                 // 当前设置的占空比
+volatile u16 cur_pwm_channel_0_duty; // 当前设置的、 pwm_channle_0 的占空比
+volatile u16 adjust_pwm_channel_0_duty; // pwm_channle_0 要调整到的占空比
+
+
+
 volatile u16 cur_pwm_channel_1_duty = 0; // 当前设置的第二路PWM的占空比
 volatile u16 adjust_duty = MAX_PWM_DUTY; // 最终要调节成的占空比（只有开机缓启动、温度检测、发送机电压不稳定检测才会修改它的值）
 // volatile u16 max_pwm_duty = MAX_PWM_DUTY;        // 存放占空比的上限值
@@ -391,6 +399,7 @@ void pwm_channel_1_enable(void)
     FOUT_S15 = GPIO_FOUT_STMR1_PWMOUT; // stmr1_pwmout
 }
 
+
 void pwm_channel_1_disable(void)
 {
     // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置回输出模式
@@ -401,9 +410,26 @@ void pwm_channel_1_disable(void)
 
 // void alter_adjust_pwm_duty(u16 set_pwm_duty)
 
-void set_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty)
+/**
+ * @brief 根据传参，加上线控调光的限制，计算最终的目标占空比（只在 pwm_channel_0 这一路有效）
+ * 
+ * @param pwm_adjust_duty 传入的目标占空比（非最终的目标占空比）
+ * 
+ * @return u16 最终的目标占空比
+ */ 
+u16 get_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty)
 {
-    adjust_duty = pwm_adjust_duty; // 设定目标占空比
+    u16 tmp_pwm_duty = 0;
+
+    // adjust_duty = pwm_adjust_duty; // 设定目标占空比 
     // 根据设定的目标占空比，更新经过旋钮限制之后的目标占空比：
-    limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
+    tmp_pwm_duty = (u32)pwm_adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // pwm_adjust_duty * 旋钮限制的占空比系数
+
+    // 判断经过旋钮限制之后的占空比 会不会 大于 温度过热之后限制的占空比
+    if (tmp_pwm_duty >= limited_pwm_duty_due_to_temp)
+    {
+        tmp_pwm_duty = limited_pwm_duty_due_to_temp;
+    }
+
+    return tmp_pwm_duty; // 返回经过线控调光限制之后的、最终的目标占空比
 }

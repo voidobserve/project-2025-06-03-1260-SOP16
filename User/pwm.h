@@ -4,7 +4,9 @@
 #include "include.h"
 #include <stdio.h>
 
-// extern bit jump_flag;
+extern volatile u16 limited_pwm_duty_due_to_temp; // 由温度限制的PWM占空比 （对所有PWM通道都生效）
+
+ 
 extern volatile u16 adjust_duty;  // 要调整到的占空比
 extern volatile u16 c_duty;       // 当前设置的占空比
 // extern volatile u16 max_pwm_duty; // 存放占空比的上限值
@@ -29,7 +31,7 @@ void pwm_init(void);
 // void _My_Adjust_Pwm(float Val);
 // void _My_Adjust_Pwm(u16 Val);
 extern void set_pwm_duty(void);
-extern void set_p15_pwm_duty(u8 set_duty); // 设置P15 15脚的PWM占空比
+// extern void set_p15_pwm_duty(u8 set_duty); // 设置P15 15脚的PWM占空比
 // void Adaptive_Duty(void);
 
 // 电源电压低于170V-AC,启动低压保护，电源电压高于170V-AC，关闭低压保护
@@ -43,6 +45,6 @@ extern void pwm_channel_0_disable(void);
 extern void pwm_channel_1_enable(void);
 extern void pwm_channel_1_disable(void);
 
-extern void set_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty);
+u16 get_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty);
 
 #endif

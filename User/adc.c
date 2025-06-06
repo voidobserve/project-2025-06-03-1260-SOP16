@@ -306,6 +306,8 @@ void set_duty(void)
         // tmr0_is_open = 0;
         // 设定占空比
         adjust_duty = PWM_DUTY_50_PERCENT;
+        
+        limited_pwm_duty_due_to_temp = PWM_DUTY_50_PERCENT; // 将pwm占空比限制到最大占空比的 50%
         // while (c_duty != adjust_duty) // 如果有旋钮调光功能，这个循环就会卡住，无法退出
         {
             // Adaptive_Duty(); // 调节占空比
@@ -318,6 +320,8 @@ void set_duty(void)
         // tmr0_is_open = 0;
         // 设定占空比
         adjust_duty = PWM_DUTY_25_PERCENT;
+        
+        limited_pwm_duty_due_to_temp = PWM_DUTY_25_PERCENT; // 将pwm占空比限制到最大占空比的 25%
         // while (c_duty != adjust_duty) // 如果有旋钮调光功能，这个循环就会卡住，无法退出
         {
             // Adaptive_Duty(); // 调节占空比

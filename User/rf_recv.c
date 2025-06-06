@@ -288,10 +288,12 @@ void rf_key_handle(void)
         }
         else // 如果PWM未使能
         {
-            adjust_duty = MAX_PWM_DUTY;
-            limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
-            c_duty = limited_adjust_pwm_duty;
+            // adjust_duty = MAX_PWM_DUTY;
+            // limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
+            // c_duty = limited_adjust_pwm_duty;
             flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
+
+            c_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
             set_pwm_duty();
             pwm_channel_0_enable();
             printf("pwm channel 0 is enable\n");

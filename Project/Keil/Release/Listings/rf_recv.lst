@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 1   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/05/2025 17:34:22 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE RF_RECV
@@ -62,7 +62,7 @@ line level    source
   51          
   52              RF_KEY_EVENT_ID_8_CLICK,
   53              RF_KEY_EVENT_ID_8_LONG,
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 2   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/05/2025 17:34:22 PAGE 2   
 
   54              RF_KEY_EVENT_ID_8_HOLD,
   55              RF_KEY_EVENT_ID_8_LOOSE,
@@ -126,7 +126,7 @@ line level    source
   99              // .scan_times = 10,   // 扫描频率，单位：ms
  100              // .last_key = NO_KEY, // 上一次得到的按键键值，初始化为无效的键值
  101              // // .filter_value = NO_KEY, // 按键消抖期间得到的键值(在key_driver_scan()函数中使用
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 3   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/05/2025 17:34:22 PAGE 3   
 
              -)，初始化为 NO_KEY
  102              // // .filter_cnt = 0, // 按键消抖期间的累加值(在key_driver_scan()函数中使用)，初始
@@ -190,7 +190,7 @@ line level    source
  155   3              }
  156   2          }
  157   1          else
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 4   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/05/2025 17:34:22 PAGE 4   
 
  158   1          {
  159   2              return NO_KEY;
@@ -254,7 +254,7 @@ line level    source
  215   2      
  216   2              printf("key 3 click\n");
  217   2      
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 5   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/05/2025 17:34:22 PAGE 5   
 
  218   2              break;
  219   2      
@@ -318,13 +318,13 @@ line level    source
  275   2      
  276   2          case RF_KEY_EVENT_ID_12_CLICK: // 控制 pwm_channel_0 开关的按键
  277   2      
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 6   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/05/2025 17:34:22 PAGE 6   
 
  278   2              // printf("key 12 click\n");
  279   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
  280   2              {
  281   3                  flag_is_pwm_channel_0_enable = 0; // 禁止timer2调节pwm
- 282   3                  // limited_adjust_pwm_duty = 0;
+ 282   3                  limited_adjust_pwm_duty = 0;
  283   3                  adjust_duty = 0;
  284   3                  c_duty = 0;
  285   3                  pwm_channel_0_disable();
@@ -333,62 +333,64 @@ line level    source
  288   3              }
  289   2              else // 如果PWM未使能
  290   2              {
- 291   3                  flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
- 292   3                  adjust_duty = MAX_PWM_DUTY;
- 293   3                  limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_du
-             -ty * 旋钮限制的占空比系数
- 294   3                  c_duty = limited_adjust_pwm_duty;
- 295   3                  set_pwm_duty();
- 296   3                  pwm_channel_0_enable();
- 297   3                  printf("pwm channel 0 is enable\n");
- 298   3              }
- 299   2      
- 300   2              break;
+ 291   3                  // adjust_duty = MAX_PWM_DUTY;
+ 292   3                  // limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust
+             -_duty * 旋钮限制的占空比系数
+ 293   3                  // c_duty = limited_adjust_pwm_duty;
+ 294   3                  flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
+ 295   3      
+ 296   3                  c_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
+ 297   3                  set_pwm_duty();
+ 298   3                  pwm_channel_0_enable();
+ 299   3                  printf("pwm channel 0 is enable\n");
+ 300   3              }
  301   2      
- 302   2          case RF_KEY_EVENT_ID_12_HOLD:
+ 302   2              break;
  303   2      
- 304   2              printf("key 12 hold\n");
+ 304   2          case RF_KEY_EVENT_ID_12_HOLD:
  305   2      
- 306   2              break;
+ 306   2              printf("key 12 hold\n");
  307   2      
- 308   2          default:
- 309   2              break;
- 310   2          }
- 311   1      }
- 312          
- 313          void rf_recv_init(void)
- 314          {
- 315   1      #if 1 // 测试时使用，在开发板上使用 P01 脚，用于检测rf信号
- 316   1      
- 317   1          P0_PU |= GPIO_P01_PULL_UP(0x01);      // 上拉
- 318   1          P0_MD0 &= ~(GPIO_P01_MODE_SEL(0x03)); // 输入模式
- 319   1      
- 320   1      #endif // 测试时使用
+ 308   2              break;
+ 309   2      
+ 310   2          default:
+ 311   2              break;
+ 312   2          }
+ 313   1      }
+ 314          
+ 315          void rf_recv_init(void)
+ 316          {
+ 317   1      #if 1 // 测试时使用，在开发板上使用 P01 脚，用于检测rf信号
+ 318   1      
+ 319   1          P0_PU |= GPIO_P01_PULL_UP(0x01);      // 上拉
+ 320   1          P0_MD0 &= ~(GPIO_P01_MODE_SEL(0x03)); // 输入模式
  321   1      
- 322   1          // 检测有无433遥控器功能的引脚：
- 323   1          P1_PU |= GPIO_P11_PULL_UP(0x01);      // 上拉
- 324   1          P1_MD0 &= ~(GPIO_P11_MODE_SEL(0x03)); // 输入模式
- 325   1      
- 326   1          if (0 == RF_ENABLE_PIN) // 检测脚接了0R电阻到GND，说明有433遥控器的功能
- 327   1          {
- 328   2              flag_is_rf_enable = 1;
- 329   2          }
- 330   1          else // 检测脚未接0R电阻，说明没有433遥控器的功能
- 331   1          {
- 332   2              flag_is_rf_enable = 0;
- 333   2          }
- 334   1      
- 335   1      MY_DEBUG:
- 336   1          flag_is_rf_enable = 1; // 测试时使用
- 337   1          // flag_is_rf_enable = 0; // 测试时使用
- 338   1      }
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/04/2025 14:59:14 PAGE 7   
+ 322   1      #endif // 测试时使用
+ 323   1      
+ 324   1          // 检测有无433遥控器功能的引脚：
+ 325   1          P1_PU |= GPIO_P11_PULL_UP(0x01);      // 上拉
+ 326   1          P1_MD0 &= ~(GPIO_P11_MODE_SEL(0x03)); // 输入模式
+ 327   1      
+ 328   1          if (0 == RF_ENABLE_PIN) // 检测脚接了0R电阻到GND，说明有433遥控器的功能
+ 329   1          {
+ 330   2              flag_is_rf_enable = 1;
+ 331   2          }
+ 332   1          else // 检测脚未接0R电阻，说明没有433遥控器的功能
+ 333   1          {
+ 334   2              flag_is_rf_enable = 0;
+ 335   2          }
+ 336   1      
+ 337   1      MY_DEBUG:
+ 338   1          flag_is_rf_enable = 1; // 测试时使用
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/05/2025 17:34:22 PAGE 7   
 
-*** WARNING C280 IN LINE 335 OF ..\..\User\rf_recv.c: 'MY_DEBUG': unreferenced label
+ 339   1          // flag_is_rf_enable = 0; // 测试时使用
+ 340   1      }
+*** WARNING C280 IN LINE 337 OF ..\..\User\rf_recv.c: 'MY_DEBUG': unreferenced label
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    523    ----
+   CODE SIZE        =    482    ----
    CONSTANT SIZE    =    209    ----
    XDATA SIZE       =     83       2
    PDATA SIZE       =   ----    ----
