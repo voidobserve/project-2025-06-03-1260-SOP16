@@ -4,17 +4,25 @@
 #include "include.h"
 #include <stdio.h>
 
-extern volatile u16 limited_pwm_duty_due_to_temp; // 由温度限制的PWM占空比 （对所有PWM通道都生效）
-
+// 由温度限制的PWM占空比 （对所有PWM通道都生效）
+extern volatile u16 limited_pwm_duty_due_to_temp; 
+// 由于发动机不稳定，而限制的可以调节到的占空比（对所有PWM通道都生效，默认为最大占空比）
+extern volatile u16 limited_pwm_duty_due_to_unstable_engine;
  
 extern volatile u16 adjust_duty;  // 要调整到的占空比
 extern volatile u16 c_duty;       // 当前设置的占空比
 // extern volatile u16 max_pwm_duty; // 存放占空比的上限值
 
+extern volatile u16 cur_pwm_channel_0_duty;    // 当前设置的、 pwm_channle_0 的占空比
+extern volatile u16 adjust_pwm_channel_0_duty; // pwm_channle_0 要调整到的占空比
+
+
 extern volatile u16 cur_pwm_channel_1_duty; // 当前设置的第二路PWN的占空比
 
-extern volatile bit flag_is_pwm_channel_0_enable; // 标志位，pwm_channel_0 是否使能
-extern volatile bit flag_is_pwm_channel_1_enable; // 标志位，pwm_channel_1 是否使能
+
+
+// extern volatile bit flag_is_pwm_channel_0_enable; // 标志位，pwm_channel_0 是否使能
+// extern volatile bit flag_is_pwm_channel_1_enable; // 标志位，pwm_channel_1 是否使能
 
 #define MAX_PWM_DUTY (6000) // 100%占空比   (SYSCLK 4800 0000 /  8000  == 6000)
 enum
@@ -44,6 +52,9 @@ extern void pwm_channel_0_enable(void);
 extern void pwm_channel_0_disable(void);
 extern void pwm_channel_1_enable(void);
 extern void pwm_channel_1_disable(void);
+
+void set_pwm_channel_0_duty(u16 channel_duty);
+void set_pwm_channel_1_duty(u16 channel_duty);
 
 u16 get_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty);
 

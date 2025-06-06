@@ -1,7 +1,7 @@
 #include "knob_dimming.h" // 旋钮调光头文件
 
-volatile u16 limited_max_pwm_duty = 0; // 存放限制的最大占空比
-volatile u16 limited_adjust_pwm_duty;  // 存放旋钮限制之后的，待调整的占空比值
+volatile u16 limited_max_pwm_duty = 0; // 存放经过旋钮限制之后的最大占空比（对所有pwm通道有效）
+// volatile u16 limited_adjust_pwm_duty;  // 存放旋钮限制之后的，待调整的占空比值
 
 // 根据旋钮，限制当前的最大占空比
 void update_max_pwm_duty_coefficient(void)
@@ -72,14 +72,15 @@ void update_max_pwm_duty_coefficient(void)
             limited_max_pwm_duty = MAX_PWM_DUTY;
         }
 
-        limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
+        // limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
 
-        if (limited_adjust_pwm_duty >= 5950) // 大于该值，直接输出最大功率，防止从MIN扭到MAX时，输出不了最大功率
-        {
-            limited_adjust_pwm_duty = adjust_duty;
-        }
+        // if (limited_adjust_pwm_duty >= 5950) // 大于该值，直接输出最大功率，防止从MIN扭到MAX时，输出不了最大功率
+        // {
+        //     limited_adjust_pwm_duty = adjust_duty;
+        // }
 
-        if (0 == limited_adjust_pwm_duty)
+        // if (0 == limited_adjust_pwm_duty)
+        if (0 == limited_max_pwm_duty)
         {
             flag_is_last_limited_equal_zero = 1;
         }

@@ -5,6 +5,7 @@
         "rf_recv.h": "c",
         "debug.h": "c",
         "include.h": "c",
-        "pwm.h": "c"
+        "pwm.h": "c",
+        "time0.h": "c"
     }
 }

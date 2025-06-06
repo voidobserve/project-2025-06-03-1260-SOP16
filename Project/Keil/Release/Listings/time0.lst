@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TIME0                                                             06/05/2025 17:34:21 PAGE 1   
+C51 COMPILER V9.60.7.0   TIME0                                                             06/06/2025 18:56:58 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIME0
@@ -62,7 +62,7 @@ line level    source
   49   1          // 清除定时器的计数值
   50   1          TMR0_CNTL = 0;
   51   1          TMR0_CNTH = 0;
-C51 COMPILER V9.60.7.0   TIME0                                                             06/05/2025 17:34:21 PAGE 2   
+C51 COMPILER V9.60.7.0   TIME0                                                             06/06/2025 18:56:58 PAGE 2   
 
   52   1      
   53   1          __DisableIRQ(TMR0_IRQn); // 关闭中断（不使能中断）

@@ -133,7 +133,7 @@ void main(void)
     // adc_sel_pin(ADC_SEL_PIN_GET_VOL); // 切换到9脚，准备检测9脚的电压
 
     limited_max_pwm_duty = MAX_PWM_DUTY;
-    limited_adjust_pwm_duty = MAX_PWM_DUTY;
+    // limited_adjust_pwm_duty = MAX_PWM_DUTY;
 // ===================================================================
 #if 0 // 开机缓慢启动（PWM信号变化平缓）
     P14 = 0; // 16脚先输出低电平
@@ -186,8 +186,11 @@ void main(void)
     }
 #endif // 开机缓慢启动（PWM信号变化平缓）
 
-MY_DEBUG:
+// MY_DEBUG:
     c_duty = MAX_PWM_DUTY; // 测试用
+    cur_pwm_channel_0_duty = MAX_PWM_DUTY; // 测试用
+    set_pwm_channel_0_duty(cur_pwm_channel_0_duty); // 测试用
+
     adjust_duty = c_duty;    // 缓启动后，立即更新 adjust_duty 的值
     flag_is_in_power_on = 0; // 表示退出了开机缓启动
     // ===================================================================
@@ -207,9 +210,9 @@ MY_DEBUG:
 
 #if 1
         adc_update_pin_9_adc_val(); // 采集并更新9脚的ad值（9脚，检测发动机功率是否稳定的引脚）
-        // update_max_pwm_duty_coefficient();
+        update_max_pwm_duty_coefficient(); // 根据当前旋钮的挡位，限制能调节到的最大的pwm占空比
         // temperature_scan();               // 检测热敏电阻一端的电压值
-        set_duty();                       // 设定到要调节到的脉宽
+        set_duty();                       // 设定到要调节到的脉宽 (设置adjust_duty)
         according_pin9_to_adjust_pin16(); // 根据9脚的电压来设定16脚的电平
 
 #if USE_MY_DEBUG

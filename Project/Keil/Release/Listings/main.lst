@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   MAIN                                                              06/05/2025 17:34:21 PAGE 1   
+C51 COMPILER V9.60.7.0   MAIN                                                              06/06/2025 18:56:58 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
@@ -62,7 +62,7 @@ line level    source
   51   1          // FOUT_S13 |= GPIO_FOUT_UART0_TX;              // 配置为UART0_TX
   52   1          // UART0_BAUD1 = (USER_UART0_BAUD >> 8) & 0xFF; // 配置波特率高八位
   53   1          // UART0_BAUD0 = USER_UART0_BAUD & 0xFF;        // 配置波特率低八位
-C51 COMPILER V9.60.7.0   MAIN                                                              06/05/2025 17:34:21 PAGE 2   
+C51 COMPILER V9.60.7.0   MAIN                                                              06/06/2025 18:56:58 PAGE 2   
 
   54   1          // UART0_CON0 = UART_STOP_BIT(0x0) |
   55   1          //              UART_EN(0x1); // 8bit数据，1bit停止位
@@ -126,7 +126,7 @@ line level    source
  111   1          // P1_MD0 |= GPIO_P13_MODE_SEL(0x1); // 配置为输出模式
  112   1          // FOUT_S13 = GPIO_FOUT_AF_FUNC;     // 选择AF功能输出
  113   1      #endif // 打印串口配置
-C51 COMPILER V9.60.7.0   MAIN                                                              06/05/2025 17:34:21 PAGE 3   
+C51 COMPILER V9.60.7.0   MAIN                                                              06/06/2025 18:56:58 PAGE 3   
 
  114   1      
  115   1          // 过压保护  16脚-----P14
@@ -150,7 +150,7 @@ line level    source
  133   1          // adc_sel_pin(ADC_SEL_PIN_GET_VOL); // 切换到9脚，准备检测9脚的电压
  134   1      
  135   1          limited_max_pwm_duty = MAX_PWM_DUTY;
- 136   1          limited_adjust_pwm_duty = MAX_PWM_DUTY;
+ 136   1          // limited_adjust_pwm_duty = MAX_PWM_DUTY;
  137   1      // ===================================================================
  138   1      #if 0 // 开机缓慢启动（PWM信号变化平缓）
                   P14 = 0; // 16脚先输出低电平
@@ -190,7 +190,7 @@ line level    source
                       }
               
                       if (flag_time_comes_during_power_on) // 如果调节时间到来 -- 13ms
-C51 COMPILER V9.60.7.0   MAIN                                                              06/05/2025 17:34:21 PAGE 4   
+C51 COMPILER V9.60.7.0   MAIN                                                              06/06/2025 18:56:58 PAGE 4   
 
                       {
                           flag_time_comes_during_power_on = 0;
@@ -206,69 +206,72 @@ line level    source
                   }
               #endif // 开机缓慢启动（PWM信号变化平缓）
  188   1      
- 189   1      MY_DEBUG:
+ 189   1      // MY_DEBUG:
  190   1          c_duty = MAX_PWM_DUTY; // 测试用
- 191   1          adjust_duty = c_duty;    // 缓启动后，立即更新 adjust_duty 的值
- 192   1          flag_is_in_power_on = 0; // 表示退出了开机缓启动
- 193   1          // ===================================================================
- 194   1      
- 195   1          // 测试样机的最大功率：
- 196   1          // c_duty = MAX_PWM_DUTY;
- 197   1          // set_pwm_duty();
- 198   1      
- 199   1          // 测试是不是由于频繁检测到电压在开机和关机之间，导致闪灯：
- 200   1          // c_duty = MAX_PWM_DUTY * 1 / 100;
- 201   1          // c_duty = MAX_PWM_DUTY * 3 / 100;
- 202   1          // c_duty = MAX_PWM_DUTY * 5 / 1000;
- 203   1          // delay_ms(1000);
- 204   1      
- 205   1          while (1)
- 206   1          {
- 207   2      
- 208   2      #if 1
- 209   2              adc_update_pin_9_adc_val(); // 采集并更新9脚的ad值（9脚，检测发动机功率是否稳
+ 191   1          cur_pwm_channel_0_duty = MAX_PWM_DUTY; // 测试用
+ 192   1          set_pwm_channel_0_duty(cur_pwm_channel_0_duty); // 测试用
+ 193   1      
+ 194   1          adjust_duty = c_duty;    // 缓启动后，立即更新 adjust_duty 的值
+ 195   1          flag_is_in_power_on = 0; // 表示退出了开机缓启动
+ 196   1          // ===================================================================
+ 197   1      
+ 198   1          // 测试样机的最大功率：
+ 199   1          // c_duty = MAX_PWM_DUTY;
+ 200   1          // set_pwm_duty();
+ 201   1      
+ 202   1          // 测试是不是由于频繁检测到电压在开机和关机之间，导致闪灯：
+ 203   1          // c_duty = MAX_PWM_DUTY * 1 / 100;
+ 204   1          // c_duty = MAX_PWM_DUTY * 3 / 100;
+ 205   1          // c_duty = MAX_PWM_DUTY * 5 / 1000;
+ 206   1          // delay_ms(1000);
+ 207   1      
+ 208   1          while (1)
+ 209   1          {
+ 210   2      
+ 211   2      #if 1
+ 212   2              adc_update_pin_9_adc_val(); // 采集并更新9脚的ad值（9脚，检测发动机功率是否稳
              -定的引脚）
- 210   2              // update_max_pwm_duty_coefficient();
- 211   2              // temperature_scan();               // 检测热敏电阻一端的电压值
- 212   2              set_duty();                       // 设定到要调节到的脉宽
- 213   2              according_pin9_to_adjust_pin16(); // 根据9脚的电压来设定16脚的电平
- 214   2      
- 215   2      #if USE_MY_DEBUG
- 216   2              // printf("adjust_duty %u\n", adjust_duty);
- 217   2              // printf(",b=%u,", adjust_duty);
- 218   2      #endif //  USE_MY_DEBUG
- 219   2      
- 220   2      #endif
- 221   2      
- 222   2              // if (flag_is_recved_rf_data)
- 223   2              // {
- 224   2              //     flag_is_recved_rf_data = 0;
- 225   2      
- 226   2              //     printf("recv data: 0x %lx\n", rf_data);
- 227   2              // }
+ 213   2              update_max_pwm_duty_coefficient(); // 根据当前旋钮的挡位，限制能调节到的最大的
+             -pwm占空比
+ 214   2              // temperature_scan();               // 检测热敏电阻一端的电压值
+ 215   2              set_duty();                       // 设定到要调节到的脉宽 (设置adjust_duty)
+ 216   2              according_pin9_to_adjust_pin16(); // 根据9脚的电压来设定16脚的电平
+ 217   2      
+ 218   2      #if USE_MY_DEBUG
+ 219   2              // printf("adjust_duty %u\n", adjust_duty);
+ 220   2              // printf(",b=%u,", adjust_duty);
+ 221   2      #endif //  USE_MY_DEBUG
+ 222   2      
+ 223   2      #endif
+ 224   2      
+ 225   2              // if (flag_is_recved_rf_data)
+ 226   2              // {
+ 227   2              //     flag_is_recved_rf_data = 0;
  228   2      
- 229   2              {
- 230   3                  if (flag_is_rf_enable) // 如果使能了rf遥控器的功能
- 231   3                  {
- 232   4                      key_driver_scan(&rf_key_para);
- 233   4                      rf_key_handle();
- 234   4                  }
- 235   3              }
-C51 COMPILER V9.60.7.0   MAIN                                                              06/05/2025 17:34:21 PAGE 5   
+ 229   2              //     printf("recv data: 0x %lx\n", rf_data);
+ 230   2              // }
+ 231   2      
+ 232   2              {
+ 233   3                  if (flag_is_rf_enable) // 如果使能了rf遥控器的功能
+ 234   3                  {
+C51 COMPILER V9.60.7.0   MAIN                                                              06/06/2025 18:56:58 PAGE 5   
 
- 236   2          }
- 237   1      }
-*** WARNING C280 IN LINE 189 OF ..\..\User\main.c: 'MY_DEBUG': unreferenced label
- 238          
- 239          /**
- 240           * @}
- 241           */
- 242          
- 243          /*************************** (C) COPYRIGHT 2022 HUGE-IC ***** END OF FILE *****/
+ 235   4                      key_driver_scan(&rf_key_para);
+ 236   4                      rf_key_handle();
+ 237   4                  }
+ 238   3              }
+ 239   2          }
+ 240   1      }
+ 241          
+ 242          /**
+ 243           * @}
+ 244           */
+ 245          
+ 246          /*************************** (C) COPYRIGHT 2022 HUGE-IC ***** END OF FILE *****/
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    329    ----
+   CODE SIZE        =    343    ----
    CONSTANT SIZE    =     11    ----
    XDATA SIZE       =      8    ----
    PDATA SIZE       =   ----    ----
@@ -278,4 +281,4 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

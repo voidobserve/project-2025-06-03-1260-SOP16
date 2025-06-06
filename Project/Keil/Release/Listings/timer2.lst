@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/05/2025 17:34:21 PAGE 1   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIMER2
@@ -62,7 +62,7 @@ line level    source
   48   2              // if (pwm_duty_sub_cnt >= 50)
   49   2              {
   50   3                  pwm_duty_sub_cnt = 0;
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/05/2025 17:34:21 PAGE 2   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 2   
 
   51   3                  flag_is_pwm_sub_time_comes = 1;
   52   3              }
@@ -126,7 +126,7 @@ line level    source
  104   6      
  105   6                              flag_is_enable_recv = 1;
  106   6                          }
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/05/2025 17:34:21 PAGE 3   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 3   
 
  107   5                          else if (flag_is_enable_recv &&
  108   5                                   low_level_cnt >= 2 && low_level_cnt < 7 &&
@@ -190,7 +190,7 @@ line level    source
  162   4                      high_level_cnt++;
  163   4                  }
  164   3      
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/05/2025 17:34:21 PAGE 4   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 4   
 
  165   3                  if (__flag_is_recved_data) //
  166   3                  {
@@ -224,63 +224,87 @@ line level    source
  193   3      
  194   3                  if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
  195   3                  {
- 196   4                      if (flag_is_pwm_channel_0_enable) // 如果 pwm_channel_0 使能，才调节它的占空�
+ 196   4      #if 0
+                              if (flag_is_pwm_channel_0_enable) // 如果 pwm_channel_0 使能，才调节它的占空�
              -�
- 197   4                      {
- 198   5                          if (limited_adjust_pwm_duty > c_duty)
- 199   5                          {
- 200   6                              c_duty++;
- 201   6                          }
- 202   5                          else if (limited_adjust_pwm_duty < c_duty)
- 203   5                          {
- 204   6                              c_duty--;
- 205   6                          }
- 206   5                          else // 如果相等
- 207   5                          {
- 208   6                          }
- 209   5      
- 210   5                          set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
- 211   5                          // set_p15_pwm_duty(c_duty);
- 212   5      
- 213   5                          // if (c_duty <= KNOB_DIMMING_MIN_ADC_VAL) // 小于某个值，直接输出0%占空�
+                              {
+                                  if (limited_adjust_pwm_duty > c_duty)
+                                  {
+                                      c_duty++;
+                                  }
+                                  else if (limited_adjust_pwm_duty < c_duty)
+                                  {
+                                      c_duty--;
+                                  }
+                                  else // 如果相等
+                                  {
+                                  }
+              
+                                  set_pwm_duty(); // 函数内部会将 c_duty 的值代入相关寄存器中
+                                  // set_p15_pwm_duty(c_duty);
+              
+                                  // if (c_duty <= KNOB_DIMMING_MIN_ADC_VAL) // 小于某个值，直接输出0%占空�
              -�，关闭PWM输出，引脚配置为输出模式(尽量小于等于2%的占空比再灭灯)
- 214   5                          if (c_duty <= 0) // 小于某个值，直接输出0%占空比，关闭PWM输出，引�
+                                  if (c_duty <= 0) // 小于某个值，直接输出0%占空比，关闭PWM输出，引�
              -��配置为输出模式(尽量小于等于2%的占空比再灭灯)
- 215   5                          {
- 216   6                              // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚�
+                                  {
+                                      // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚�
              -�置回输出模式，输出低电平
- 217   6                              STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
- 218   6                              FOUT_S16 = GPIO_FOUT_AF_FUNC; //
- 219   6                              P16 = 1;                      // 高电平为关灯
- 220   6                          }
- 221   5                          // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，�
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/05/2025 17:34:21 PAGE 5   
+                                      STMR_PWMEN &= ~0x01;          // 不使能PWM0的输出
+                                      FOUT_S16 = GPIO_FOUT_AF_FUNC; //
+                                      P16 = 1;                      // 高电平为关灯
+                                  }
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 5   
 
+                                  // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，�
              -�脚配置回PWM
- 222   5                          else if (c_duty >= 0) // 大于某个值，再打开PWM，引脚配置回PWM
- 223   5                          {
- 224   6                              FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
- 225   6                              STMR_PWMEN |= 0x01;                // 使能PWM0的输出
- 226   6                          }
- 227   5                      }
- 228   4      
- 229   4                  } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
- 230   3      
- 231   3      #if 0
+                                  else if (c_duty >= 0) // 大于某个值，再打开PWM，引脚配置回PWM
+                                  {
+                                      FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
+                                      STMR_PWMEN |= 0x01;                // 使能PWM0的输出
+                                  }
+                              }
+              #endif
+ 230   4      
+ 231   4                      if (adjust_pwm_channel_0_duty > cur_pwm_channel_0_duty)
+ 232   4                      {
+ 233   5                          cur_pwm_channel_0_duty++;
+ 234   5                      }
+ 235   4                      else if (adjust_pwm_channel_0_duty < cur_pwm_channel_0_duty)
+ 236   4                      {
+ 237   5                          cur_pwm_channel_0_duty--;
+ 238   5                      }
+ 239   4      
+ 240   4                      set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+ 241   4      
+ 242   4                      if (cur_pwm_channel_0_duty <= 0)
+ 243   4                      {
+ 244   5                          // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出
+             -模式
+ 245   5                          pwm_channel_0_disable();
+ 246   5                      }
+ 247   4                      else // 如果大于0
+ 248   4                      {
+ 249   5                          pwm_channel_0_enable();
+ 250   5                      }
+ 251   4      
+ 252   4                  } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
+ 253   3      
+ 254   3      #if 0
                           // printf("c_duty %u\n", c_duty);
                           // printf(",c=%u\n", c_duty);
               #endif
- 235   3              }
- 236   2      #endif // 调节PWM占空比
- 237   2          }
- 238   1      
- 239   1          // 退出中断设置IP，不可删除
- 240   1          __IRQnIPnPop(TMR2_IRQn);
- 241   1      }
+ 258   3              }
+ 259   2      #endif // 调节PWM占空比
+ 260   2          }
+ 261   1      
+ 262   1          // 退出中断设置IP，不可删除
+ 263   1          __IRQnIPnPop(TMR2_IRQn);
+ 264   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    755    ----
+   CODE SIZE        =    723    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =     15    ----
    PDATA SIZE       =   ----    ----

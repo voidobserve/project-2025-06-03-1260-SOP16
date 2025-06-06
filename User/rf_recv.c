@@ -193,6 +193,9 @@ void rf_key_handle(void)
         return;
     }
 
+    // 可能要在这里读取 rf_key_para.latest_key_event
+    // 看看是不是 HOLD，如果是第一次长按，累计几次后进行对码操作
+
     rf_key_event = __rf_key_get_event(rf_key_para.latest_key_val, rf_key_para.latest_key_event);
     rf_key_para.latest_key_val = RF_KEY_ID_NONE;
     rf_key_para.latest_key_event = KEY_EVENT_NONE;
@@ -247,29 +250,70 @@ void rf_key_handle(void)
 
         break;
 
-    case RF_KEY_EVENT_ID_9_CLICK:
+    case RF_KEY_EVENT_ID_9_CLICK: // 加大PWM占空比
 
         printf("key 9 click\n");
 
-        break;
-
-    case RF_KEY_EVENT_ID_10_CLICK:
-
-        printf("key 10 click\n");
-        if (flag_is_pwm_channel_0_enable) // 如果已经开机/由遥控器开机
+        if (get_pwm_channel_0_status()) // 如果PWM已经使能
         {
-            // c_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
-            adjust_duty = PWM_DUTY_50_PERCENT;
-            limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
-            c_duty = limited_adjust_pwm_duty;
-            set_pwm_duty();
+            // u16 expected_pwm_duty = cur_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+
+            // if (cur_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
+            // {
+            //     expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+            //     cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
+            //     set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+            // }
+
+            u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+
+            if (adjust_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
+            {
+                expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
+            }
         }
 
         break;
 
-    case RF_KEY_EVENT_ID_11_CLICK:
+    case RF_KEY_EVENT_ID_10_CLICK: // 设置占空比为50%
+
+        printf("key 10 click\n");
+        if (get_pwm_channel_0_status()) // 如果PWM已经使能
+        {
+            // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(PWM_DUTY_50_PERCENT);
+            // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+            adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(PWM_DUTY_50_PERCENT);
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty;// 更新当前的占空比对应的数值
+            set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+        }
+
+        break;
+
+    case RF_KEY_EVENT_ID_11_CLICK: // 减小PWM占空比
 
         printf("key 11 click\n");
+
+        if (get_pwm_channel_0_status()) // 如果PWM已经使能
+        {
+            // u16 expected_pwm_duty = cur_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+
+            // if (cur_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比大于最大占空比的5%
+            // {
+            //     expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+            //     cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
+            //     set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+            // }
+
+            u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+
+            if (adjust_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比大于最大占空比的5%
+            {
+                expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
+                // set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+            }
+        }
 
         break;
 
@@ -278,12 +322,21 @@ void rf_key_handle(void)
         // printf("key 12 click\n");
         if (get_pwm_channel_0_status()) // 如果PWM已经使能
         {
-            flag_is_pwm_channel_0_enable = 0; // 禁止timer2调节pwm
-            limited_adjust_pwm_duty = 0;
-            adjust_duty = 0;
-            c_duty = 0;
+            // flag_is_pwm_channel_0_enable = 0; // 禁止timer2调节pwm
+            // limited_adjust_pwm_duty = 0;
+            // adjust_duty = 0;
+            // c_duty = 0;
+
+            // c_duty = get_pwm_channel_0_adjust_duty(0);
+            // set_pwm_duty();
+
+            // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(0);
+            // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+
+            adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(0);
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty;// 更新当前的占空比对应的数值
+            set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
             pwm_channel_0_disable();
-            set_pwm_duty();
             printf("pwm channel 0 is disable\n");
         }
         else // 如果PWM未使能
@@ -291,10 +344,17 @@ void rf_key_handle(void)
             // adjust_duty = MAX_PWM_DUTY;
             // limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
             // c_duty = limited_adjust_pwm_duty;
-            flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
+            // flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
 
-            c_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
-            set_pwm_duty();
+            // c_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
+            // set_pwm_duty();
+
+            // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
+            // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+
+            adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+            set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
             pwm_channel_0_enable();
             printf("pwm channel 0 is enable\n");
         }
@@ -334,7 +394,7 @@ void rf_recv_init(void)
         flag_is_rf_enable = 0;
     }
 
-MY_DEBUG:
-    flag_is_rf_enable = 1; // 测试时使用
+// MY_DEBUG:
+    flag_is_rf_enable = 1; // 测试时使用（使能433遥控的功能）
     // flag_is_rf_enable = 0; // 测试时使用
 }

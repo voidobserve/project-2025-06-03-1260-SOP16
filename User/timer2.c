@@ -193,6 +193,7 @@ void TIMR2_IRQHandler(void) interrupt TMR2_IRQn
 
             if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
             {
+#if 0
                 if (flag_is_pwm_channel_0_enable) // 如果 pwm_channel_0 使能，才调节它的占空比
                 {
                     if (limited_adjust_pwm_duty > c_duty)
@@ -224,6 +225,28 @@ void TIMR2_IRQHandler(void) interrupt TMR2_IRQn
                         FOUT_S16 = GPIO_FOUT_STMR0_PWMOUT; // stmr0_pwmout
                         STMR_PWMEN |= 0x01;                // 使能PWM0的输出
                     }
+                }
+#endif
+
+                if (adjust_pwm_channel_0_duty > cur_pwm_channel_0_duty)
+                {
+                    cur_pwm_channel_0_duty++;
+                }
+                else if (adjust_pwm_channel_0_duty < cur_pwm_channel_0_duty)
+                {
+                    cur_pwm_channel_0_duty--;
+                }
+
+                set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+
+                if (cur_pwm_channel_0_duty <= 0)
+                {
+                    // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出模式
+                    pwm_channel_0_disable();
+                }
+                else // 如果大于0
+                {
+                    pwm_channel_0_enable();
                 }
 
             } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节

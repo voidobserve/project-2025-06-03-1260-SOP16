@@ -39,7 +39,7 @@
 // #define KNOB_DIMMING_ADC_VAL_80_PERCENT
 
 extern volatile u16 limited_max_pwm_duty;    // 存放限制的最大占空比
-extern volatile u16 limited_adjust_pwm_duty; // 存放旋钮限制之后的，待调整的占空比值
+// extern volatile u16 limited_adjust_pwm_duty; // 存放旋钮限制之后的，待调整的占空比值
 
 // 根据旋钮，限制当前的最大占空比
 void update_max_pwm_duty_coefficient(void);
