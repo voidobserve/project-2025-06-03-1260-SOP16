@@ -10,20 +10,32 @@
 #include "knob_dimming.h" // 旋钮调光头文件
 #include "rf_recv.h"
 
+// MY_DEBUG:
 #define USE_MY_DEBUG 1 // 是否使用打印调试
+
+// MY_DEBUG:
+/*
+    测试引脚：
+    使用 P00 作为 串口打印输出 （实际用到的芯片的第4脚）
+    rf检测引脚 用 P01 代替 P03
+    pwm_channel_1 输出引脚 用 P05 代替 P15
+    用 p06 代替 xx
+
+*/
+#define USE_MY_TEST_PIN 1 // 是否使用测试用的引脚（开发板没有相关的引脚，用其他空闲的引脚来代替）
+
+// MY_DEBUG:
+#define USE_MY_TEST_433_REMOTE 1 // 是否使用测试用的433遥控器按键，用于修改特定值，观察变化
 
 #if USE_MY_DEBUG
 #include <stdio.h>
 #endif // #if USE_MY_DEBUG
 
+#define ARRAY_SIZE(n) (sizeof(n) / sizeof(n[0]))
 
 // tmr1配置成每10ms产生一次中断，计数值加一，
 // 这里定义时间对应的计数值
-
-#define ARRAY_SIZE(n) (sizeof(n) / sizeof(n[0]))
-
 // #define TMR1_CNT_30_MINUTES 180000UL // 30min（这个是可以在30min后调节PWM占空比的）
-
 #define TMR1_CNT_5_MINUTES 30000UL // 5min
 
 // // 测试用的计数值
@@ -51,6 +63,24 @@ enum
 // #define ADC_VAL_WHEN_UNSTABLE (2600) // 9脚检测到电压不稳定、发动机功率不足时，对应的的阈值，大于该值就认为不稳定
 // #define ADC_VAL_WHEN_UNSTABLE (2730) // 9脚检测到电压不稳定、发动机功率不足时，对应的的阈值，大于该值就认为不稳定
 
+/*
+    风扇异常时，对应的ad值
+
+    客户要求： 检测到大于3.9V，认为风扇异常，所有pwm占空比降低至25%，小于3.9V，认为风扇正常工作
+
+    检测时使用 4.2V 内部参考电压， 3.9V 对应的ad值是 4803
+*/
+#define ADC_VAL_WHEN_FAN_ERR (3803)
+#define ADC_VAL_WHEN_FAN_NORMAL (3705) // 风扇正常时，对应的ad值 （3.8V--对应ad值3705）
+// 累计检测风扇多少时间，才更新一次风扇的状态，单位：ms （例如，累计检测风扇正常工5s，才将风扇的状态更新为正常）
+#define FAN_SCAN_TIMES (2000)
+
+// 定义风扇状态
+enum FAN_STATUS
+{
+    FAN_STATUS_NORMAL = 0,
+    FAN_STATUS_ERROR,
+};
 
 #include "key_driver.h"
 

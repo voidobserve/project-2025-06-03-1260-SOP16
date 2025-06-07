@@ -1,11 +1,11 @@
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 1   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIMER2
 OBJECT MODULE PLACED IN .\Release\Objects\timer2.obj
-COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\User\timer2.c LARGE OPTIMIZE(8,SPEED) BROWSE INTVECTOR(0X000C) INC
-                    -DIR(..\..\Libraries\Include;..\..\User) INTERVAL(3) DEBUG OBJECTEXTEND PRINT(.\Release\Listings\timer2.lst) OBJECT(.\Rel
-                    -ease\Objects\timer2.obj)
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\User\timer2.c LARGE OPTIMIZE(9,SIZE) BROWSE INTVECTOR(0X000C) INCD
+                    -IR(..\..\Libraries\Include;..\..\User) INTERVAL(3) DEBUG OBJECTEXTEND PRINT(.\Release\Listings\timer2.lst) OBJECT(.\Rele
+                    -ase\Objects\timer2.obj)
 
 line level    source
 
@@ -62,7 +62,7 @@ line level    source
   48   2              // if (pwm_duty_sub_cnt >= 50)
   49   2              {
   50   3                  pwm_duty_sub_cnt = 0;
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 2   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 2   
 
   51   3                  flag_is_pwm_sub_time_comes = 1;
   52   3              }
@@ -126,7 +126,7 @@ line level    source
  104   6      
  105   6                              flag_is_enable_recv = 1;
  106   6                          }
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 3   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 3   
 
  107   5                          else if (flag_is_enable_recv &&
  108   5                                   low_level_cnt >= 2 && low_level_cnt < 7 &&
@@ -190,7 +190,7 @@ line level    source
  162   4                      high_level_cnt++;
  163   4                  }
  164   3      
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 4   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 4   
 
  165   3                  if (__flag_is_recved_data) //
  166   3                  {
@@ -254,7 +254,7 @@ line level    source
                                       FOUT_S16 = GPIO_FOUT_AF_FUNC; //
                                       P16 = 1;                      // 高电平为关灯
                                   }
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/06/2025 18:56:59 PAGE 5   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 5   
 
                                   // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，�
              -�脚配置回PWM
@@ -265,48 +265,77 @@ line level    source
                                   }
                               }
               #endif
- 230   4      
- 231   4                      if (adjust_pwm_channel_0_duty > cur_pwm_channel_0_duty)
- 232   4                      {
- 233   5                          cur_pwm_channel_0_duty++;
- 234   5                      }
- 235   4                      else if (adjust_pwm_channel_0_duty < cur_pwm_channel_0_duty)
- 236   4                      {
- 237   5                          cur_pwm_channel_0_duty--;
- 238   5                      }
- 239   4      
- 240   4                      set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+ 230   4                      // =================================================================
+ 231   4                      // pwm_channel_0                                               //
+ 232   4                      // =================================================================
+ 233   4                      if (adjust_pwm_channel_0_duty > cur_pwm_channel_0_duty)
+ 234   4                      {
+ 235   5                          cur_pwm_channel_0_duty++;
+ 236   5                      }
+ 237   4                      else if (adjust_pwm_channel_0_duty < cur_pwm_channel_0_duty)
+ 238   4                      {
+ 239   5                          cur_pwm_channel_0_duty--;
+ 240   5                      }
  241   4      
- 242   4                      if (cur_pwm_channel_0_duty <= 0)
- 243   4                      {
- 244   5                          // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出
+ 242   4                      set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+ 243   4      
+ 244   4                      if (cur_pwm_channel_0_duty <= 0)
+ 245   4                      {
+ 246   5                          // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出
              -模式
- 245   5                          pwm_channel_0_disable();
- 246   5                      }
- 247   4                      else // 如果大于0
- 248   4                      {
- 249   5                          pwm_channel_0_enable();
- 250   5                      }
- 251   4      
- 252   4                  } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
- 253   3      
- 254   3      #if 0
+ 247   5                          pwm_channel_0_disable();
+ 248   5                      }
+ 249   4                      else // 如果大于0
+ 250   4                      {
+ 251   5                          pwm_channel_0_enable();
+ 252   5                      }
+ 253   4      
+ 254   4                      // =================================================================
+ 255   4                      // pwm_channel_1                                               //
+ 256   4                      // =================================================================
+ 257   4                      if (adjust_pwm_channel_1_duty > cur_pwm_channel_1_duty)
+ 258   4                      {
+ 259   5                          cur_pwm_channel_1_duty++;
+ 260   5                      }
+ 261   4                      else if (adjust_pwm_channel_1_duty < cur_pwm_channel_1_duty)
+ 262   4                      {
+ 263   5                          cur_pwm_channel_1_duty--;
+ 264   5                      }
+ 265   4      
+ 266   4                      set_pwm_channel_1_duty(cur_pwm_channel_1_duty);
+ 267   4      
+ 268   4                      if (cur_pwm_channel_1_duty <= 0)
+ 269   4                      {
+ 270   5                          // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出
+             -模式
+ 271   5                          pwm_channel_1_disable();
+ 272   5                      }
+ 273   4                      else // 如果大于0
+ 274   4                      {
+ 275   5                          pwm_channel_1_enable();
+ 276   5                      }
+ 277   4      
+ 278   4                  } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
+ 279   3      
+ 280   3      #if 0
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 6   
+
                           // printf("c_duty %u\n", c_duty);
                           // printf(",c=%u\n", c_duty);
               #endif
- 258   3              }
- 259   2      #endif // 调节PWM占空比
- 260   2          }
- 261   1      
- 262   1          // 退出中断设置IP，不可删除
- 263   1          __IRQnIPnPop(TMR2_IRQn);
- 264   1      }
+ 284   3              }
+ 285   2      #endif // 调节PWM占空比
+ 286   2          }
+ 287   1      
+ 288   1          // 退出中断设置IP，不可删除
+ 289   1          __IRQnIPnPop(TMR2_IRQn);
+ 290   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    723    ----
+   CODE SIZE        =    714    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =     15    ----
+   XDATA SIZE       =     17    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

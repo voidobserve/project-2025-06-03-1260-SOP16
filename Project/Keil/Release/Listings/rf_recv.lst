@@ -1,11 +1,11 @@
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 1   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE RF_RECV
 OBJECT MODULE PLACED IN .\Release\Objects\rf_recv.obj
-COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\User\rf_recv.c LARGE OPTIMIZE(8,SPEED) BROWSE INTVECTOR(0X000C) IN
-                    -CDIR(..\..\Libraries\Include;..\..\User) INTERVAL(3) DEBUG OBJECTEXTEND PRINT(.\Release\Listings\rf_recv.lst) OBJECT(.\R
-                    -elease\Objects\rf_recv.obj)
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\User\rf_recv.c LARGE OPTIMIZE(9,SIZE) BROWSE INTVECTOR(0X000C) INC
+                    -DIR(..\..\Libraries\Include;..\..\User) INTERVAL(3) DEBUG OBJECTEXTEND PRINT(.\Release\Listings\rf_recv.lst) OBJECT(.\Re
+                    -lease\Objects\rf_recv.obj)
 
 line level    source
 
@@ -62,7 +62,7 @@ line level    source
   51          
   52              RF_KEY_EVENT_ID_8_CLICK,
   53              RF_KEY_EVENT_ID_8_LONG,
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 2   
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 2   
 
   54              RF_KEY_EVENT_ID_8_HOLD,
   55              RF_KEY_EVENT_ID_8_LOOSE,
@@ -86,374 +86,566 @@ line level    source
   73              RF_KEY_EVENT_ID_12_LONG,
   74              RF_KEY_EVENT_ID_12_HOLD,
   75              RF_KEY_EVENT_ID_12_LOOSE,
-  76          };
-  77          
-  78          #define RF_KEY_EFFECT_EVENT_NUMS (4) // 单个触摸按键的有效按键事件个数 (单击、长按、�
+  76          
+  77          #if USE_MY_TEST_433_REMOTE
+  78          
+  79              // 测试时使用到的按键事件，实际不使用
+  80              RF_KEY_EVENT_ID_TEST_1_CLICK,
+  81              RF_KEY_EVENT_ID_TEST_1_LONG,
+  82              RF_KEY_EVENT_ID_TEST_1_HOLD,
+  83              RF_KEY_EVENT_ID_TEST_1_LOOSE,
+  84          
+  85              RF_KEY_EVENT_ID_TEST_2_CLICK,
+  86              RF_KEY_EVENT_ID_TEST_2_LONG,
+  87              RF_KEY_EVENT_ID_TEST_2_HOLD,
+  88              RF_KEY_EVENT_ID_TEST_2_LOOSE,
+  89          
+  90              RF_KEY_EVENT_ID_TEST_3_CLICK,
+  91              RF_KEY_EVENT_ID_TEST_3_LONG,
+  92              RF_KEY_EVENT_ID_TEST_3_HOLD,
+  93              RF_KEY_EVENT_ID_TEST_3_LOOSE,
+  94          
+  95              RF_KEY_EVENT_ID_TEST_4_CLICK,
+  96              RF_KEY_EVENT_ID_TEST_4_LONG,
+  97              RF_KEY_EVENT_ID_TEST_4_HOLD,
+  98              RF_KEY_EVENT_ID_TEST_4_LOOSE,
+  99          
+ 100          #endif // #if USE_MY_TEST_433_REMOTE
+ 101          };
+ 102          
+ 103          #define RF_KEY_EFFECT_EVENT_NUMS (4) // 单个触摸按键的有效按键事件个数 (单击、长按、�
              -��续、松开)
-  79          // 将按键id和按键事件绑定起来，在 xx 函数中，通过查表的方式得到按键事件
-  80          static const u8 rf_key_event_table[][RF_KEY_EFFECT_EVENT_NUMS + 1] = {
-  81              // [0]--按键对应的id号，用于查表，[1]、[2]、[3]...--用于与 key_driver.h 中定义的�
+ 104          // 将按键id和按键事件绑定起来，在 xx 函数中，通过查表的方式得到按键事件
+ 105          static const u8 rf_key_event_table[][RF_KEY_EFFECT_EVENT_NUMS + 1] = {
+ 106              // [0]--按键对应的id号，用于查表，[1]、[2]、[3]...--用于与 key_driver.h 中定义的�
              -��键事件KEY_EVENT绑定关系(一定要一一对应)
-  82              {RF_KEY_ID_1, RF_KEY_EVENT_ID_1_CLICK, RF_KEY_EVENT_ID_1_LONG, RF_KEY_EVENT_ID_1_HOLD, RF_KEY_EVENT_ID
+ 107              {RF_KEY_ID_1, RF_KEY_EVENT_ID_1_CLICK, RF_KEY_EVENT_ID_1_LONG, RF_KEY_EVENT_ID_1_HOLD, RF_KEY_EVENT_ID
              -_1_LOOSE},      //
-  83              {RF_KEY_ID_2, RF_KEY_EVENT_ID_2_CLICK, RF_KEY_EVENT_ID_2_LONG, RF_KEY_EVENT_ID_2_HOLD, RF_KEY_EVENT_ID
+ 108              {RF_KEY_ID_2, RF_KEY_EVENT_ID_2_CLICK, RF_KEY_EVENT_ID_2_LONG, RF_KEY_EVENT_ID_2_HOLD, RF_KEY_EVENT_ID
              -_2_LOOSE},      //
-  84              {RF_KEY_ID_3, RF_KEY_EVENT_ID_3_CLICK, RF_KEY_EVENT_ID_3_LONG, RF_KEY_EVENT_ID_3_HOLD, RF_KEY_EVENT_ID
+ 109              {RF_KEY_ID_3, RF_KEY_EVENT_ID_3_CLICK, RF_KEY_EVENT_ID_3_LONG, RF_KEY_EVENT_ID_3_HOLD, RF_KEY_EVENT_ID
              -_3_LOOSE},      //
-  85              {RF_KEY_ID_4, RF_KEY_EVENT_ID_4_CLICK, RF_KEY_EVENT_ID_4_LONG, RF_KEY_EVENT_ID_4_HOLD, RF_KEY_EVENT_ID
+ 110              {RF_KEY_ID_4, RF_KEY_EVENT_ID_4_CLICK, RF_KEY_EVENT_ID_4_LONG, RF_KEY_EVENT_ID_4_HOLD, RF_KEY_EVENT_ID
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 3   
+
              -_4_LOOSE},      //
-  86              {RF_KEY_ID_5, RF_KEY_EVENT_ID_5_CLICK, RF_KEY_EVENT_ID_5_LONG, RF_KEY_EVENT_ID_5_HOLD, RF_KEY_EVENT_ID
+ 111              {RF_KEY_ID_5, RF_KEY_EVENT_ID_5_CLICK, RF_KEY_EVENT_ID_5_LONG, RF_KEY_EVENT_ID_5_HOLD, RF_KEY_EVENT_ID
              -_5_LOOSE},      //
-  87              {RF_KEY_ID_6, RF_KEY_EVENT_ID_6_CLICK, RF_KEY_EVENT_ID_6_LONG, RF_KEY_EVENT_ID_6_HOLD, RF_KEY_EVENT_ID
+ 112              {RF_KEY_ID_6, RF_KEY_EVENT_ID_6_CLICK, RF_KEY_EVENT_ID_6_LONG, RF_KEY_EVENT_ID_6_HOLD, RF_KEY_EVENT_ID
              -_6_LOOSE},      //
-  88              {RF_KEY_ID_7, RF_KEY_EVENT_ID_7_CLICK, RF_KEY_EVENT_ID_7_LONG, RF_KEY_EVENT_ID_7_HOLD, RF_KEY_EVENT_ID
+ 113              {RF_KEY_ID_7, RF_KEY_EVENT_ID_7_CLICK, RF_KEY_EVENT_ID_7_LONG, RF_KEY_EVENT_ID_7_HOLD, RF_KEY_EVENT_ID
              -_7_LOOSE},      //
-  89              {RF_KEY_ID_8, RF_KEY_EVENT_ID_8_CLICK, RF_KEY_EVENT_ID_8_LONG, RF_KEY_EVENT_ID_8_HOLD, RF_KEY_EVENT_ID
+ 114              {RF_KEY_ID_8, RF_KEY_EVENT_ID_8_CLICK, RF_KEY_EVENT_ID_8_LONG, RF_KEY_EVENT_ID_8_HOLD, RF_KEY_EVENT_ID
              -_8_LOOSE},      //
-  90              {RF_KEY_ID_9, RF_KEY_EVENT_ID_9_CLICK, RF_KEY_EVENT_ID_9_LONG, RF_KEY_EVENT_ID_9_HOLD, RF_KEY_EVENT_ID
+ 115              {RF_KEY_ID_9, RF_KEY_EVENT_ID_9_CLICK, RF_KEY_EVENT_ID_9_LONG, RF_KEY_EVENT_ID_9_HOLD, RF_KEY_EVENT_ID
              -_9_LOOSE},      //
-  91              {RF_KEY_ID_10, RF_KEY_EVENT_ID_10_CLICK, RF_KEY_EVENT_ID_10_LONG, RF_KEY_EVENT_ID_10_HOLD, RF_KEY_EVEN
+ 116              {RF_KEY_ID_10, RF_KEY_EVENT_ID_10_CLICK, RF_KEY_EVENT_ID_10_LONG, RF_KEY_EVENT_ID_10_HOLD, RF_KEY_EVEN
              -T_ID_10_LOOSE}, //
-  92              {RF_KEY_ID_11, RF_KEY_EVENT_ID_11_CLICK, RF_KEY_EVENT_ID_11_LONG, RF_KEY_EVENT_ID_11_HOLD, RF_KEY_EVEN
+ 117              {RF_KEY_ID_11, RF_KEY_EVENT_ID_11_CLICK, RF_KEY_EVENT_ID_11_LONG, RF_KEY_EVENT_ID_11_HOLD, RF_KEY_EVEN
              -T_ID_11_LOOSE}, //
-  93              {RF_KEY_ID_12, RF_KEY_EVENT_ID_12_CLICK, RF_KEY_EVENT_ID_12_LONG, RF_KEY_EVENT_ID_12_HOLD, RF_KEY_EVEN
+ 118              {RF_KEY_ID_12, RF_KEY_EVENT_ID_12_CLICK, RF_KEY_EVENT_ID_12_LONG, RF_KEY_EVENT_ID_12_HOLD, RF_KEY_EVEN
              -T_ID_12_LOOSE}, //
-  94          };
-  95          
-  96          extern u8 rf_key_get_key_id(void);
-  97          volatile struct key_driver_para rf_key_para = {
-  98              // 编译器不支持指定成员赋值的写法，会报错：
-  99              // .scan_times = 10,   // 扫描频率，单位：ms
- 100              // .last_key = NO_KEY, // 上一次得到的按键键值，初始化为无效的键值
- 101              // // .filter_value = NO_KEY, // 按键消抖期间得到的键值(在key_driver_scan()函数中使用
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 3   
-
+ 119          
+ 120          #if USE_MY_TEST_433_REMOTE
+ 121          
+ 122              {RF_KEY_ID_TEST_1, RF_KEY_EVENT_ID_TEST_1_CLICK, RF_KEY_EVENT_ID_TEST_1_LONG, RF_KEY_EVENT_ID_TEST_1_H
+             -OLD, RF_KEY_EVENT_ID_TEST_1_LOOSE}, //
+ 123              {RF_KEY_ID_TEST_2, RF_KEY_EVENT_ID_TEST_2_CLICK, RF_KEY_EVENT_ID_TEST_2_LONG, RF_KEY_EVENT_ID_TEST_2_H
+             -OLD, RF_KEY_EVENT_ID_TEST_2_LOOSE}, //
+ 124              {RF_KEY_ID_TEST_3, RF_KEY_EVENT_ID_TEST_3_CLICK, RF_KEY_EVENT_ID_TEST_3_LONG, RF_KEY_EVENT_ID_TEST_3_H
+             -OLD, RF_KEY_EVENT_ID_TEST_3_LOOSE}, //
+ 125              {RF_KEY_ID_TEST_4, RF_KEY_EVENT_ID_TEST_4_CLICK, RF_KEY_EVENT_ID_TEST_4_LONG, RF_KEY_EVENT_ID_TEST_4_H
+             -OLD, RF_KEY_EVENT_ID_TEST_4_LOOSE}, //
+ 126          
+ 127          #endif // #if USE_MY_TEST_433_REMOTE
+ 128          };
+ 129          
+ 130          extern u8 rf_key_get_key_id(void);
+ 131          volatile struct key_driver_para rf_key_para = {
+ 132              // 编译器不支持指定成员赋值的写法，会报错：
+ 133              // .scan_times = 10,   // 扫描频率，单位：ms
+ 134              // .last_key = NO_KEY, // 上一次得到的按键键值，初始化为无效的键值
+ 135              // // .filter_value = NO_KEY, // 按键消抖期间得到的键值(在key_driver_scan()函数中使用
              -)，初始化为 NO_KEY
- 102              // // .filter_cnt = 0, // 按键消抖期间的累加值(在key_driver_scan()函数中使用)，初始
+ 136              // // .filter_cnt = 0, // 按键消抖期间的累加值(在key_driver_scan()函数中使用)，初始
              -化为0
- 103              // .filter_time = 3,       // 按键消抖次数，与扫描频率有关
- 104              // .long_time = 50,        // 判定按键是长按对应的数量，与扫描频率有关
- 105              // .hold_time = (75 + 15), // 判定按键是HOLD对应的数量，与扫描频率有关
- 106              // // .press_cnt = 0, // 与long_time和hold_time对比, 判断长按事件和HOLD事件
- 107              // // .click_cnt = 0,
- 108              // .click_delay_time = 20, // 按键抬起后，等待连击的数量，与扫描频率有关
- 109              // // .notify_value = 0,
- 110              // .key_type = KEY_TYPE_AD, // 按键类型为ad按键
- 111              // .get_value = ad_key_get_key_id,
- 112          
- 113              // .latest_key_val = AD_KEY_ID_NONE,
- 114              // .latest_key_event = KEY_EVENT_NONE,
- 115          
- 116              RF_KEY_SCAN_CIRCLE_TIMES, // .scan_times 扫描频率，单位：ms
- 117              0,                        // .cur_scan_times 按键扫描频率, 单位ms，由1ms的定时器中断�
+ 137              // .filter_time = 3,       // 按键消抖次数，与扫描频率有关
+ 138              // .long_time = 50,        // 判定按键是长按对应的数量，与扫描频率有关
+ 139              // .hold_time = (75 + 15), // 判定按键是HOLD对应的数量，与扫描频率有关
+ 140              // // .press_cnt = 0, // 与long_time和hold_time对比, 判断长按事件和HOLD事件
+ 141              // // .click_cnt = 0,
+ 142              // .click_delay_time = 20, // 按键抬起后，等待连击的数量，与扫描频率有关
+ 143              // // .notify_value = 0,
+ 144              // .key_type = KEY_TYPE_AD, // 按键类型为ad按键
+ 145              // .get_value = ad_key_get_key_id,
+ 146          
+ 147              // .latest_key_val = AD_KEY_ID_NONE,
+ 148              // .latest_key_event = KEY_EVENT_NONE,
+ 149          
+ 150              RF_KEY_SCAN_CIRCLE_TIMES, // .scan_times 扫描频率，单位：ms
+ 151              0,                        // .cur_scan_times 按键扫描频率, 单位ms，由1ms的定时器中断�
              -�累加，在key_driver_scan()中清零
- 118              // NO_KEY,
- 119              0, // .last_key
- 120          
- 121              0,                   // .filter_value
- 122              0,                   // .filter_cnt
- 123              RF_KEY_FILTER_TIMES, // .filter_time 按键消抖次数，与扫描频率有关（rf按键不消抖）
- 124          
- 125              RF_LONG_PRESS_TIME_THRESHOLD_MS / RF_KEY_SCAN_CIRCLE_TIMES,                                     // .lo
+ 152              // NO_KEY,
+ 153              0, // .last_key
+ 154          
+ 155              0,                   // .filter_value
+ 156              0,                   // .filter_cnt
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 4   
+
+ 157              RF_KEY_FILTER_TIMES, // .filter_time 按键消抖次数，与扫描频率有关（rf按键不消抖）
+ 158          
+ 159              RF_LONG_PRESS_TIME_THRESHOLD_MS / RF_KEY_SCAN_CIRCLE_TIMES,                                     // .lo
              -ng_time
- 126              (RF_LONG_PRESS_TIME_THRESHOLD_MS + RF_HOLD_PRESS_TIME_THRESHOLD_MS) / RF_KEY_SCAN_CIRCLE_TIMES, // .ho
+ 160              (RF_LONG_PRESS_TIME_THRESHOLD_MS + RF_HOLD_PRESS_TIME_THRESHOLD_MS) / RF_KEY_SCAN_CIRCLE_TIMES, // .ho
              -ld_time
- 127              0,                                                                                              // .pr
+ 161              0,                                                                                              // .pr
              -ess_cnt
- 128          
- 129              0,                              // .click_cnt
- 130              0,                              // .click_delay_cnt
- 131              200 / RF_KEY_SCAN_CIRCLE_TIMES, // .click_delay_time
- 132              // NO_KEY,
- 133              0,                 // .notify_value
- 134              KEY_TYPE_RF,       // .key_type
- 135              rf_key_get_key_id, // .get_value
- 136          
- 137              RF_KEY_ID_NONE, // .latest_key_val
- 138              KEY_EVENT_NONE, // .latest_key_event
- 139          }; // volatile struct key_driver_para rf_key_para
- 140          
- 141          static u8 rf_key_get_key_id(void)
- 142          {
- 143   1          if (flag_is_recved_rf_data)
- 144   1          {
- 145   2              flag_is_recved_rf_data = 0;
- 146   2              if (rf_data)
- 147   2              {
- 148   3                  u8 ret = (u8)rf_data;
- 149   3                  rf_data = 0;
- 150   3                  return (u8)ret; // 直接获取键值
- 151   3              }
- 152   2              else
- 153   2              {
- 154   3                  return NO_KEY;
- 155   3              }
- 156   2          }
- 157   1          else
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 4   
-
- 158   1          {
- 159   2              return NO_KEY;
- 160   2          }
- 161   1      }
  162          
- 163          /**
- 164           * @brief 将按键值和 key_driver_scan 得到的按键事件转换成触摸按键的事件
- 165           *
- 166           * @param key_val 触摸按键键值
- 167           * @param key_event 在key_driver_scan得到的按键事件 KEY_EVENT
- 168           * @return u8 在 rf_key_event_table 中找到的对应的按键事件，如果没有则返回 RF_KEY_EVEN
-             -T_NONE
- 169           */
- 170          static u8 __rf_key_get_event(const u8 key_val, const u8 key_event)
- 171          {
- 172   1          volatile u8 ret_key_event = RF_KEY_EVENT_NONE;
- 173   1          u8 i = 0;
- 174   1          for (; i < ARRAY_SIZE(rf_key_event_table); i++)
- 175   1          {
- 176   2              // 如果往 KEY_EVENT 枚举中添加了新的按键事件，这里查表的方法就会失效，
-             -需要手动修改
- 177   2              if (key_val == rf_key_event_table[i][0])
- 178   2              {
- 179   3                  ret_key_event = rf_key_event_table[i][key_event];
- 180   3                  break;
- 181   3              }
- 182   2          }
- 183   1      
- 184   1          return ret_key_event;
- 185   1      }
- 186          
- 187          void rf_key_handle(void)
- 188          {
- 189   1          u8 rf_key_event = RF_KEY_EVENT_NONE;
- 190   1      
- 191   1          if (rf_key_para.latest_key_val == RF_KEY_ID_NONE)
+ 163              0,                              // .click_cnt
+ 164              0,                              // .click_delay_cnt
+ 165              200 / RF_KEY_SCAN_CIRCLE_TIMES, // .click_delay_time
+ 166              // NO_KEY,
+ 167              0,                 // .notify_value
+ 168              KEY_TYPE_RF,       // .key_type
+ 169              rf_key_get_key_id, // .get_value
+ 170          
+ 171              RF_KEY_ID_NONE, // .latest_key_val
+ 172              KEY_EVENT_NONE, // .latest_key_event
+ 173          }; // volatile struct key_driver_para rf_key_para
+ 174          
+ 175          static u8 rf_key_get_key_id(void)
+ 176          {
+ 177   1          if (flag_is_recved_rf_data)
+ 178   1          {
+ 179   2              flag_is_recved_rf_data = 0;
+ 180   2              if (rf_data)
+ 181   2              {
+ 182   3                  u8 ret = (u8)rf_data;
+ 183   3                  rf_data = 0;
+ 184   3                  return (u8)ret; // 直接获取键值
+ 185   3              }
+ 186   2              else
+ 187   2              {
+ 188   3                  return NO_KEY;
+ 189   3              }
+ 190   2          }
+ 191   1          else
  192   1          {
- 193   2              return;
+ 193   2              return NO_KEY;
  194   2          }
- 195   1      
- 196   1          // 可能要在这里读取 rf_key_para.latest_key_event
- 197   1          // 看看是不是 HOLD，如果是第一次长按，累计几次后进行对码操作
- 198   1      
- 199   1          rf_key_event = __rf_key_get_event(rf_key_para.latest_key_val, rf_key_para.latest_key_event);
- 200   1          rf_key_para.latest_key_val = RF_KEY_ID_NONE;
- 201   1          rf_key_para.latest_key_event = KEY_EVENT_NONE;
- 202   1      
- 203   1          switch (rf_key_event)
- 204   1          {
- 205   2          case RF_KEY_EVENT_ID_1_CLICK:
- 206   2      
- 207   2              printf("key 1 click\n");
- 208   2      
- 209   2              break;
- 210   2      
- 211   2          case RF_KEY_EVENT_ID_2_CLICK:
- 212   2      
- 213   2              printf("key 2 click\n");
- 214   2      
- 215   2              break;
- 216   2      
- 217   2          case RF_KEY_EVENT_ID_3_CLICK:
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 5   
+ 195   1      }
+ 196          
+ 197          /**
+ 198           * @brief 将按键值和 key_driver_scan 得到的按键事件转换成触摸按键的事件
+ 199           *
+ 200           * @param key_val 触摸按键键值
+ 201           * @param key_event 在key_driver_scan得到的按键事件 KEY_EVENT
+ 202           * @return u8 在 rf_key_event_table 中找到的对应的按键事件，如果没有则返回 RF_KEY_EVEN
+             -T_NONE
+ 203           */
+ 204          static u8 __rf_key_get_event(const u8 key_val, const u8 key_event)
+ 205          {
+ 206   1          volatile u8 ret_key_event = RF_KEY_EVENT_NONE;
+ 207   1          u8 i = 0;
+ 208   1          for (; i < ARRAY_SIZE(rf_key_event_table); i++)
+ 209   1          {
+ 210   2              // 如果往 KEY_EVENT 枚举中添加了新的按键事件，这里查表的方法就会失效，
+             -需要手动修改
+ 211   2              if (key_val == rf_key_event_table[i][0])
+ 212   2              {
+ 213   3                  ret_key_event = rf_key_event_table[i][key_event];
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 5   
 
- 218   2      
- 219   2              printf("key 3 click\n");
- 220   2      
- 221   2              break;
- 222   2      
- 223   2          case RF_KEY_EVENT_ID_4_CLICK:
- 224   2      
- 225   2              printf("key 4 click\n");
- 226   2      
- 227   2              break;
- 228   2      
- 229   2          case RF_KEY_EVENT_ID_5_CLICK:
- 230   2      
- 231   2              printf("key 5 click\n");
- 232   2      
- 233   2              break;
- 234   2      
- 235   2          case RF_KEY_EVENT_ID_6_CLICK:
- 236   2      
- 237   2              printf("key 6 click\n");
- 238   2      
- 239   2              break;
- 240   2      
- 241   2          case RF_KEY_EVENT_ID_7_CLICK:
- 242   2      
- 243   2              printf("key 7 click\n");
- 244   2      
- 245   2              break;
- 246   2      
- 247   2          case RF_KEY_EVENT_ID_8_CLICK:
- 248   2      
- 249   2              printf("key 8 click\n");
- 250   2      
- 251   2              break;
- 252   2      
- 253   2          case RF_KEY_EVENT_ID_9_CLICK: // 加大PWM占空比
- 254   2      
- 255   2              printf("key 9 click\n");
- 256   2      
- 257   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
- 258   2              {
- 259   3                  // u16 expected_pwm_duty = cur_pwm_channel_0_duty; // 存放期望设定的pwm占空比
- 260   3      
- 261   3                  // if (cur_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
- 262   3                  // {
- 263   3                  //     expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
- 264   3                  //     cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
- 265   3                  //     set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
- 266   3                  // }
- 267   3      
- 268   3                  u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
- 269   3      
- 270   3                  if (adjust_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
- 271   3                  {
- 272   4                      expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
- 273   4                      adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
- 274   4                  }
- 275   3              }
- 276   2      
- 277   2              break;
- 278   2      
- 279   2          case RF_KEY_EVENT_ID_10_CLICK: // 设置占空比为50%
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 6   
+ 214   3                  break;
+ 215   3              }
+ 216   2          }
+ 217   1      
+ 218   1          return ret_key_event;
+ 219   1      }
+ 220          
+ 221          void rf_key_handle(void)
+ 222          {
+ 223   1          u8 rf_key_event = RF_KEY_EVENT_NONE;
+ 224   1      
+ 225   1          if (rf_key_para.latest_key_val == RF_KEY_ID_NONE)
+ 226   1          {
+ 227   2              return;
+ 228   2          }
+ 229   1      
+ 230   1          // 可能要在这里读取 rf_key_para.latest_key_event
+ 231   1          // 看看是不是 HOLD，如果是第一次长按，累计几次后进行对码操作
+ 232   1          { // 用于进行对码的代码块
+ 233   2              static u16 hold_cnt;
+ 234   2              static u8 last_key_val;
+ 235   2      
+ 236   2              if (last_key_val == rf_key_para.latest_key_val)
+ 237   2              {
+ 238   3                  if (rf_key_para.latest_key_event == KEY_EVENT_HOLD)
+ 239   3                  {
+ 240   4                      if (hold_cnt < 65535)
+ 241   4                      {
+ 242   5                          hold_cnt++;
+ 243   5      
+ 244   5                          // if (hold_cnt 大于某个阈值)
+ 245   5                          {
+ 246   6                              // 存放对码的地址
+ 247   6                          }
+ 248   5                      }
+ 249   4                  }
+ 250   3              }
+ 251   2          } // 用于进行对码的代码块
+ 252   1      
+ 253   1          rf_key_event = __rf_key_get_event(rf_key_para.latest_key_val, rf_key_para.latest_key_event);
+ 254   1          rf_key_para.latest_key_val = RF_KEY_ID_NONE;
+ 255   1          rf_key_para.latest_key_event = KEY_EVENT_NONE;
+ 256   1      
+ 257   1          switch (rf_key_event)
+ 258   1          {
+ 259   2          case RF_KEY_EVENT_ID_1_CLICK: // ON/OFF
+ 260   2      
+ 261   2              // printf("key 1 click\n");
+ 262   2      
+ 263   2              // 只要有一路开启，便认为灯光已经打开：
+ 264   2              if (get_pwm_channel_0_status() || get_pwm_channel_1_status())
+ 265   2              {
+ 266   3                  adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(0);
+ 267   3                  adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(0);
+ 268   3      
+ 269   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+ 270   3                  cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
+ 271   3      
+ 272   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 273   3                  set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+ 274   3      
+ 275   3                  pwm_channel_0_disable();
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 6   
 
- 280   2      
- 281   2              printf("key 10 click\n");
- 282   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
- 283   2              {
- 284   3                  // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(PWM_DUTY_50_PERCENT);
- 285   3                  // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
- 286   3                  adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(PWM_DUTY_50_PERCENT);
- 287   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty;// 更新当前的占空比对应的数值
- 288   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
- 289   3              }
- 290   2      
- 291   2              break;
- 292   2      
- 293   2          case RF_KEY_EVENT_ID_11_CLICK: // 减小PWM占空比
- 294   2      
- 295   2              printf("key 11 click\n");
- 296   2      
- 297   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
- 298   2              {
- 299   3                  // u16 expected_pwm_duty = cur_pwm_channel_0_duty; // 存放期望设定的pwm占空比
- 300   3      
- 301   3                  // if (cur_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比�
-             -��于最大占空比的5%
- 302   3                  // {
- 303   3                  //     expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
- 304   3                  //     cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
- 305   3                  //     set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
- 306   3                  // }
- 307   3      
- 308   3                  u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
- 309   3      
- 310   3                  if (adjust_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比�
-             -��于最大占空比的5%
- 311   3                  {
- 312   4                      expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
- 313   4                      adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
- 314   4                      // set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
- 315   4                  }
- 316   3              }
+ 276   3                  pwm_channel_1_disable();
+ 277   3      
+ 278   3                  // printf("all pwm channels are disable\n");
+ 279   3              }
+ 280   2              else
+ 281   2              {
+ 282   3                  adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(MAX_PWM_DUTY);
+ 283   3                  adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(MAX_PWM_DUTY);
+ 284   3                  // adjust_pwm_channel_1_duty = adjust_pwm_channel_0_duty;
+ 285   3      
+ 286   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+ 287   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 288   3      
+ 289   3                  cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
+ 290   3                  set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+ 291   3      
+ 292   3                  pwm_channel_0_enable();
+ 293   3                  pwm_channel_1_enable();
+ 294   3      
+ 295   3                  // printf("all pwm channels are enable\n");
+ 296   3              }
+ 297   2      
+ 298   2              break;
+ 299   2      
+ 300   2          case RF_KEY_EVENT_ID_2_CLICK: // 1+2按键，亮度设置为100%
+ 301   2      
+ 302   2              // printf("key 2 click\n");
+ 303   2              // 只要有一路开启，便认为灯光已经打开：
+ 304   2              if (get_pwm_channel_0_status() || get_pwm_channel_1_status())
+ 305   2              {
+ 306   3                  adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_100_PERCENT);
+ 307   3                  adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_100_PERCENT);
+ 308   3      
+ 309   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+ 310   3                  cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
+ 311   3      
+ 312   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 313   3                  set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+ 314   3              }
+ 315   2      
+ 316   2              break;
  317   2      
- 318   2              break;
+ 318   2          case RF_KEY_EVENT_ID_3_CLICK: // pwm_channel_0 duty++
  319   2      
- 320   2          case RF_KEY_EVENT_ID_12_CLICK: // 控制 pwm_channel_0 开关的按键
+ 320   2              // printf("key 3 click\n");
  321   2      
- 322   2              // printf("key 12 click\n");
- 323   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
- 324   2              {
- 325   3                  // flag_is_pwm_channel_0_enable = 0; // 禁止timer2调节pwm
- 326   3                  // limited_adjust_pwm_duty = 0;
- 327   3                  // adjust_duty = 0;
- 328   3                  // c_duty = 0;
- 329   3      
- 330   3                  // c_duty = get_pwm_channel_0_adjust_duty(0);
- 331   3                  // set_pwm_duty();
- 332   3      
- 333   3                  // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(0);
- 334   3                  // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
- 335   3      
- 336   3                  adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(0);
- 337   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty;// 更新当前的占空比对应的数值
- 338   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
- 339   3                  pwm_channel_0_disable();
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 7   
+ 322   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 323   2              {
+ 324   3                  u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+ 325   3      
+ 326   3                  if (adjust_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
+ 327   3                  {
+ 328   4                      // expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+ 329   4                      expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制
+             -的占空比为100%）
+ 330   4                      adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+ 331   4                  }
+ 332   3              }
+ 333   2      
+ 334   2              break;
+ 335   2      
+ 336   2          case RF_KEY_EVENT_ID_4_CLICK: // pwm_channel_1 duty++
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 7   
 
- 340   3                  printf("pwm channel 0 is disable\n");
- 341   3              }
- 342   2              else // 如果PWM未使能
- 343   2              {
- 344   3                  // adjust_duty = MAX_PWM_DUTY;
- 345   3                  // limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust
-             -_duty * 旋钮限制的占空比系数
- 346   3                  // c_duty = limited_adjust_pwm_duty;
- 347   3                  // flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
- 348   3      
- 349   3                  // c_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
- 350   3                  // set_pwm_duty();
- 351   3      
- 352   3                  // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
- 353   3                  // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
- 354   3      
- 355   3                  adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
- 356   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
- 357   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
- 358   3                  pwm_channel_0_enable();
- 359   3                  printf("pwm channel 0 is enable\n");
- 360   3              }
- 361   2      
- 362   2              break;
+ 337   2      
+ 338   2              // printf("key 4 click\n");
+ 339   2      
+ 340   2              if (get_pwm_channel_1_status()) // 如果PWM已经使能
+ 341   2              {
+ 342   3                  u16 expected_pwm_duty = adjust_pwm_channel_1_duty; // 存放期望设定的pwm占空比
+ 343   3      
+ 344   3                  if (adjust_pwm_channel_1_duty < PWM_DUTY_100_PERCENT)
+ 345   3                  {
+ 346   4                      // expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+ 347   4                      expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制
+             -的占空比为100%）
+ 348   4                      adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+ 349   4                  }
+ 350   3              }
+ 351   2      
+ 352   2              break;
+ 353   2      
+ 354   2          case RF_KEY_EVENT_ID_5_CLICK: // set pwm_channel_0 50%
+ 355   2      
+ 356   2              // printf("key 5 click\n");
+ 357   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 358   2              {
+ 359   3                  adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_50_PERCENT);
+ 360   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+ 361   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 362   3              }
  363   2      
- 364   2          case RF_KEY_EVENT_ID_12_HOLD:
+ 364   2              break;
  365   2      
- 366   2              printf("key 12 hold\n");
+ 366   2          case RF_KEY_EVENT_ID_6_CLICK: // set pwm_channel_1 50%
  367   2      
- 368   2              break;
- 369   2      
- 370   2          default:
- 371   2              break;
- 372   2          }
- 373   1      }
- 374          
- 375          void rf_recv_init(void)
- 376          {
- 377   1      #if 1 // 测试时使用，在开发板上使用 P01 脚，用于检测rf信号
- 378   1      
- 379   1          P0_PU |= GPIO_P01_PULL_UP(0x01);      // 上拉
- 380   1          P0_MD0 &= ~(GPIO_P01_MODE_SEL(0x03)); // 输入模式
- 381   1      
- 382   1      #endif // 测试时使用
- 383   1      
- 384   1          // 检测有无433遥控器功能的引脚：
- 385   1          P1_PU |= GPIO_P11_PULL_UP(0x01);      // 上拉
- 386   1          P1_MD0 &= ~(GPIO_P11_MODE_SEL(0x03)); // 输入模式
- 387   1      
- 388   1          if (0 == RF_ENABLE_PIN) // 检测脚接了0R电阻到GND，说明有433遥控器的功能
- 389   1          {
- 390   2              flag_is_rf_enable = 1;
- 391   2          }
- 392   1          else // 检测脚未接0R电阻，说明没有433遥控器的功能
- 393   1          {
- 394   2              flag_is_rf_enable = 0;
- 395   2          }
- 396   1      
- 397   1      // MY_DEBUG:
- 398   1          flag_is_rf_enable = 1; // 测试时使用（使能433遥控的功能）
- 399   1          // flag_is_rf_enable = 0; // 测试时使用
- 400   1      }
-C51 COMPILER V9.60.7.0   RF_RECV                                                           06/06/2025 19:00:20 PAGE 8   
+ 368   2              // printf("key 6 click\n");
+ 369   2              if (get_pwm_channel_1_status()) // 如果PWM已经使能
+ 370   2              {
+ 371   3                  adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_50_PERCENT);
+ 372   3                  cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
+ 373   3                  set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+ 374   3              }
+ 375   2      
+ 376   2              break;
+ 377   2      
+ 378   2          case RF_KEY_EVENT_ID_7_CLICK: // pwm_channel_0 duty--
+ 379   2      
+ 380   2              // printf("key 7 click\n");
+ 381   2      
+ 382   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 383   2              {
+ 384   3                  u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+ 385   3      
+ 386   3                  if (adjust_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比�
+             -��于最大占空比的5%
+ 387   3                  {
+ 388   4                      // expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+ 389   4                      expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制
+             -的占空比为100%）
+ 390   4                      adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+ 391   4                  }
+ 392   3              }
+ 393   2      
+ 394   2              break;
+ 395   2      
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 8   
+
+ 396   2          case RF_KEY_EVENT_ID_8_CLICK: // pwm_channel_1 duty--
+ 397   2      
+ 398   2              // printf("key 8 click\n");
+ 399   2      
+ 400   2              if (get_pwm_channel_1_status()) // 如果PWM已经使能
+ 401   2              {
+ 402   3                  u16 expected_pwm_duty = adjust_pwm_channel_1_duty; // 存放期望设定的pwm占空比
+ 403   3      
+ 404   3                  if (adjust_pwm_channel_1_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比�
+             -��于最大占空比的5%
+ 405   3                  {
+ 406   4                      // expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+ 407   4                      expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制
+             -的占空比为100%）
+ 408   4                      adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+ 409   4                  }
+ 410   3              }
+ 411   2      
+ 412   2              break;
+ 413   2      
+ 414   2          case RF_KEY_EVENT_ID_9_CLICK: // 加大PWM占空比
+ 415   2      
+ 416   2              printf("key 9 click\n");
+ 417   2      
+ 418   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 419   2              {
+ 420   3                  // u16 expected_pwm_duty = cur_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+ 421   3      
+ 422   3                  // if (cur_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
+ 423   3                  // {
+ 424   3                  //     expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+ 425   3                  //     cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
+ 426   3                  //     set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+ 427   3                  // }
+ 428   3      
+ 429   3                  u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+ 430   3      
+ 431   3                  if (adjust_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
+ 432   3                  {
+ 433   4                      // expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+ 434   4                      expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制
+             -的占空比为100%）
+ 435   4                      adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+ 436   4                  }
+ 437   3              }
+ 438   2      
+ 439   2              break;
+ 440   2      
+ 441   2          case RF_KEY_EVENT_ID_10_CLICK: // 设置占空比为50%
+ 442   2      
+ 443   2              // printf("key 10 click\n");
+ 444   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 445   2              {
+ 446   3                  // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(PWM_DUTY_50_PERCENT);
+ 447   3                  // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+ 448   3                  adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_50_PERCENT);
+ 449   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+ 450   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 451   3              }
+ 452   2      
+ 453   2              break;
+ 454   2      
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 9   
+
+ 455   2          case RF_KEY_EVENT_ID_11_CLICK: // 减小PWM占空比
+ 456   2      
+ 457   2              // printf("key 11 click\n");
+ 458   2      
+ 459   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 460   2              {
+ 461   3      
+ 462   3                  u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+ 463   3      
+ 464   3                  if (adjust_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比�
+             -��于最大占空比的5%
+ 465   3                  {
+ 466   4                      // expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+ 467   4                      expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制
+             -的占空比为100%）
+ 468   4                      adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+ 469   4                      // set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 470   4                  }
+ 471   3              }
+ 472   2      
+ 473   2              break;
+ 474   2      
+ 475   2          case RF_KEY_EVENT_ID_12_CLICK: // 控制 pwm_channel_0 开关的按键
+ 476   2      
+ 477   2              // printf("key 12 click\n");
+ 478   2              if (get_pwm_channel_0_status()) // 如果PWM已经使能
+ 479   2              {
+ 480   3                  adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(0);
+ 481   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+ 482   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 483   3                  pwm_channel_0_disable();
+ 484   3                  // printf("pwm channel 0 is disable\n");
+ 485   3              }
+ 486   2              else // 如果PWM未使能
+ 487   2              {
+ 488   3                  adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(MAX_PWM_DUTY);
+ 489   3                  cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+ 490   3                  set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+ 491   3                  pwm_channel_0_enable();
+ 492   3                  // printf("pwm channel 0 is enable\n");
+ 493   3              }
+ 494   2      
+ 495   2              break;
+ 496   2      
+ 497   2          case RF_KEY_EVENT_ID_12_HOLD:
+ 498   2      
+ 499   2              // printf("key 12 hold\n");
+ 500   2      
+ 501   2              break;
+ 502   2      
+ 503   2      #if USE_MY_TEST_433_REMOTE
+ 504   2      
+ 505   2          case RF_KEY_EVENT_ID_TEST_1_CLICK:
+ 506   2      
+ 507   2              printf("test 1 click\n");
+ 508   2              if (limited_max_pwm_duty < (MAX_PWM_DUTY - 500))
+ 509   2              {
+ 510   3                  limited_max_pwm_duty += 500;
+ 511   3              }
+ 512   2      
+ 513   2              break;
+ 514   2      
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 10  
+
+ 515   2          case RF_KEY_EVENT_ID_TEST_2_CLICK:
+ 516   2      
+ 517   2              printf("test 2 click\n");
+ 518   2      
+ 519   2              if (limited_max_pwm_duty > (0 + 500))
+ 520   2              {
+ 521   3                  limited_max_pwm_duty -= 500;
+ 522   3              }
+ 523   2      
+ 524   2              break;
+ 525   2      
+ 526   2          case RF_KEY_EVENT_ID_TEST_3_CLICK:
+ 527   2      
+ 528   2              printf("test 3 click\n");
+ 529   2      
+ 530   2              break;
+ 531   2      
+ 532   2          case RF_KEY_EVENT_ID_TEST_4_CLICK:
+ 533   2      
+ 534   2              printf("test 4 click\n");
+ 535   2      
+ 536   2              break;
+ 537   2      
+ 538   2      #endif // #if USE_MY_TEST_433_REMOTE
+ 539   2      
+ 540   2          default:
+ 541   2              break;
+ 542   2          }
+ 543   1      }
+ 544          
+ 545          void rf_recv_init(void)
+ 546          {
+ 547   1      // MY_DEBUG:
+ 548   1      #if USE_MY_TEST_PIN // 测试时使用，在开发板上使用 P01 脚，用于检测rf信号
+ 549   1      
+ 550   1          P0_PU |= GPIO_P01_PULL_UP(0x01);      // 上拉
+ 551   1          P0_MD0 &= ~(GPIO_P01_MODE_SEL(0x03)); // 输入模式
+ 552   1      
+ 553   1      #else // 实际用到的、非测试时使用的rf信号检测引脚：
+              
+                  P0_PU |= GPIO_P03_PULL_UP(0x01);      // 上拉
+                  P0_MD0 &= ~(GPIO_P03_MODE_SEL(0x03)); // 输入模式
+              
+              #endif // #if USE_MY_TEST_PIN
+ 559   1      
+ 560   1          // 检测有无433遥控器功能的引脚：
+ 561   1          P1_PU |= GPIO_P11_PULL_UP(0x01);      // 上拉
+ 562   1          P1_MD0 &= ~(GPIO_P11_MODE_SEL(0x03)); // 输入模式
+ 563   1      
+ 564   1          if (0 == RF_ENABLE_PIN) // 检测脚接了0R电阻到GND，说明有433遥控器的功能
+ 565   1          {
+ 566   2              flag_is_rf_enable = 1;
+ 567   2          }
+ 568   1          else // 检测脚未接0R电阻，说明没有433遥控器的功能
+ 569   1          {
+ 570   2              flag_is_rf_enable = 0;
+ 571   2          }
+ 572   1      
+ 573   1          // MY_DEBUG:
+ 574   1          flag_is_rf_enable = 1; // 测试时使用（使能433遥控的功能）
+ 575   1          // flag_is_rf_enable = 0; // 测试时使用
+ 576   1      }
+C51 COMPILER V9.60.7.0   RF_RECV                                                           06/07/2025 16:56:14 PAGE 11  
 
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    629    ----
-   CONSTANT SIZE    =    209    ----
-   XDATA SIZE       =     83       4
+   CODE SIZE        =   1042    ----
+   CONSTANT SIZE    =     69    ----
+   XDATA SIZE       =    108       5
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

@@ -19,6 +19,11 @@ void adc_pin_config(void)
     P3_PU &= ~(0x01 << 1); // 关闭上拉
     P3_PD &= ~(0x01 << 1); // 关闭下拉
     P3_MD0 |= GPIO_P31_MODE_SEL(0x3);
+
+    // P13 -- 芯片的1脚，配置为模拟输入模式
+    P1_PU &= ~(0x01 << 3);             // 关闭上拉
+    P1_PD &= ~(0x01 << 3);             // 关闭下拉
+    P1_MD0 |= GPIO_P13_MODE_SEL(0x03); // 模拟IO工作模式
 }
 
 // 切换adc采集的引脚，配置好adc
@@ -39,7 +44,7 @@ void adc_sel_pin(const u8 adc_sel)
     last_adc_sel = adc_sel;
 
     ADC_CFG1 |= (0x0F << 3); // ADC时钟分频为16分频，为系统时钟/16
-    ADC_CFG2 = 0xFF; // 通道0采样时间配置为256个采样时钟周期
+    ADC_CFG2 = 0xFF;         // 通道0采样时间配置为256个采样时钟周期
 
     switch (adc_sel)
     {
@@ -55,8 +60,7 @@ void adc_sel_pin(const u8 adc_sel)
 
         ADC_CHS0 = ADC_ANALOG_CHAN(0x18) | // 选则引脚对应的通道（0x18--P30）
                    ADC_EXT_SEL(0x0);       // 选择外部通道
-        ADC_CFG0 |= ADC_CHAN0_EN(0x1) |    // 使能通道0转换
-                    ADC_EN(0x1);           // 使能A/D转换
+
         break;
 
     case ADC_SEL_PIN_GET_VOL: // 检测回路电压的引脚（9脚）
@@ -72,8 +76,6 @@ void adc_sel_pin(const u8 adc_sel)
                     ADC_BIAS_SEL(0x1);     // 偏置电流：1x
         ADC_CHS0 = ADC_ANALOG_CHAN(0x17) | // 选则引脚对应的通道（0x17--P27）
                    ADC_EXT_SEL(0x0);       // 选择外部通道
-        ADC_CFG0 |= ADC_CHAN0_EN(0x1) |    // 使能通道0转换
-                    ADC_EN(0x1);           // 使能A/D转换
 
         break;
 
@@ -88,12 +90,26 @@ void adc_sel_pin(const u8 adc_sel)
                     ADC_BIAS_SEL(0x1);     // 偏置电流：1x
         ADC_CHS0 = ADC_ANALOG_CHAN(0x19) | // 选则引脚对应的通道（0x19--P31）
                    ADC_EXT_SEL(0x0);       // 选择外部通道
-        ADC_CFG0 |= ADC_CHAN0_EN(0x1) |    // 使能通道0转换
-                    ADC_EN(0x1);           // 使能A/D转换
+
+        break;
+
+    case ADC_SEL_PIN_FAN_DETECT: // P13 芯片的1脚，检测风扇是否异常
+
+        ADC_ACON1 &= ~(ADC_VREF_SEL(0x7) | ADC_EXREF_SEL(0x01)); // 关闭外部参考电压，清除选择的参考电压
+        ADC_ACON1 |= ADC_VREF_SEL(0x5) |                         // 选择内部参考电压 4.2V (用户手册说未校准)
+                     ADC_TEN_SEL(0x3);                           /* 关闭测试信号 */
+        ADC_ACON0 = ADC_CMP_EN(0x1) |                            // 打开ADC中的CMP使能信号
+                    ADC_BIAS_EN(0x1) |                           // 打开ADC偏置电流能使信号
+                    ADC_BIAS_SEL(0x1);                           // 偏置电流：1x
+        ADC_CHS0 = ADC_ANALOG_CHAN(0x0B) |                       // 选则引脚对应的通道（0x0B--P13）
+                   ADC_EXT_SEL(0x0);                             // 选择外部通道
+
         break;
     }
 
-    delay_ms(1); // 等待ADC稳定
+    ADC_CFG0 |= ADC_CHAN0_EN(0x1) | // 使能通道0转换
+                ADC_EN(0x1);        // 使能A/D转换
+    delay_ms(1);                    // 等待ADC稳定
 }
 
 // adc完成一次转换
@@ -143,7 +159,6 @@ u16 adc_get_val(void)
     return g_temp_value;
 }
 
-
 // 从引脚上采集滤波后的电压值,函数内部会将采集到的ad转换成对应的电压值
 u32 get_voltage_from_pin(void)
 {
@@ -154,7 +169,6 @@ u32 get_voltage_from_pin(void)
     // 4095（adc转换后，可能出现的最大的值） * 0.0012 == 4.914，约等于5V（VCC）
     return adc_aver_val * 12 / 10; // 假设是4095，4095 * 12/10 == 4915mV
 }
-
 
 // 温度检测功能
 void temperature_scan(void)
@@ -168,7 +182,6 @@ void temperature_scan(void)
     {
         return;
     }
-
 
     adc_sel_pin(ADC_SEL_PIN_GET_TEMP); // 先切换成热敏电阻对应的引脚的adc配置
     voltage = get_voltage_from_pin();  // 采集热敏电阻上的电压
@@ -283,18 +296,13 @@ void temperature_scan(void)
     }
 }
 
-
 // 根据温度（电压值扫描）或9脚的状态来设定占空比
 void set_duty(void)
 {
-    // static bit tmr0_is_open = 0;
-
     // 如果温度正常，根据9脚的状态来调节PWM占空比
     if (TEMP_NORMAL == temp_status)
-    { 
-
+    {
         according_pin9_to_adjust_pwm();
-        // Adaptive_Duty(); // 调节占空比
 #if USE_MY_DEBUG
         // printf("cur duty: %d\n", c_duty);
 #endif
@@ -305,12 +313,18 @@ void set_duty(void)
         // tmr0_disable(); // 关闭定时器0，不以9脚的电压来调节PWM
         // tmr0_is_open = 0;
         // 设定占空比
-        adjust_duty = PWM_DUTY_50_PERCENT;
-        
+        // adjust_duty = PWM_DUTY_50_PERCENT;
+
         limited_pwm_duty_due_to_temp = PWM_DUTY_50_PERCENT; // 将pwm占空比限制到最大占空比的 50%
-        // while (c_duty != adjust_duty) // 如果有旋钮调光功能，这个循环就会卡住，无法退出
         {
-            // Adaptive_Duty(); // 调节占空比
+            // 是否要更新所有pwm通道待调节的占空比值（温度异常后，这个代码块之后执行一次）
+            static bit flag_is_update_adjust_duty = 1;
+            if (flag_is_update_adjust_duty)
+            {
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+                flag_is_update_adjust_duty = 0;
+            }
         }
     }
     // else if (TEMP_75_30MIN == temp_status)
@@ -319,12 +333,18 @@ void set_duty(void)
         // tmr0_disable(); // 关闭定时器0，不以9脚的电压来调节PWM
         // tmr0_is_open = 0;
         // 设定占空比
-        adjust_duty = PWM_DUTY_25_PERCENT;
-        
+        // adjust_duty = PWM_DUTY_25_PERCENT;
+
         limited_pwm_duty_due_to_temp = PWM_DUTY_25_PERCENT; // 将pwm占空比限制到最大占空比的 25%
-        // while (c_duty != adjust_duty) // 如果有旋钮调光功能，这个循环就会卡住，无法退出
         {
-            // Adaptive_Duty(); // 调节占空比
+            // 是否要更新所有pwm通道待调节的占空比值（温度异常后，这个代码块之后执行一次）
+            static bit flag_is_update_adjust_duty = 1;
+            if (flag_is_update_adjust_duty)
+            {
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+                flag_is_update_adjust_duty = 0;
+            }
         }
     }
 }
@@ -340,7 +360,73 @@ void adc_update_pin_9_adc_val(void)
 
 #if USE_MY_DEBUG // 打印从9脚采集到的ad值
     // printf("adc_val_pin_9 %u\n", adc_val_pin_9);
-    
+
     // printf(",a=%u,", adc_val_pin_9);
 #endif // USE_MY_DEBUG // 打印从9脚采集到的ad值
+}
+
+volatile bit flag_tim_scan_fan_is_err = 0;      // 标志位，由定时器扫描并累计时间，表示当前风扇是否异常
+volatile u8 cur_fan_status = FAN_STATUS_NORMAL; // 当前风扇状态
+void fan_scan(void)
+{
+    static u8 last_fan_status = FAN_STATUS_NORMAL;
+
+    u16 adc_val = 0;
+    adc_sel_pin(ADC_SEL_PIN_FAN_DETECT);
+    adc_val = adc_get_val();
+
+    // {
+    //     static u16 cnt = 0;
+    //     cnt++;
+    //     if (cnt >= 200)
+    //     {
+    //         cnt = 0;
+    //         printf("fan adc val : %u\n", adc_val);
+    //     }
+    // }
+
+    if (FAN_STATUS_NORMAL == cur_fan_status)
+    {
+        if (adc_val >= ADC_VAL_WHEN_FAN_ERR)
+        {
+            flag_tim_scan_fan_is_err = 1;
+        }
+        else
+        {
+            // 风扇正常时，只要有一次ad值不满足异常的条件，便认为它是正常工作
+            flag_tim_scan_fan_is_err = 0;
+        }
+
+        // 风扇正常工作，pwm正常输出
+        limited_pwm_duty_due_to_fan_err = PWM_DUTY_100_PERCENT;
+
+        // 如果是从 风扇异常工作 -> 风扇正常工作，才会执行下面的语句
+        // 风扇工作正常之后，下面的语句并不能让当前pwm占空比恢复
+        // if (FAN_STATUS_ERROR == last_fan_status)
+        // {
+        //     adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+        //     adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+        //     last_fan_status = FAN_STATUS_NORMAL;
+        // }
+    }
+    else // FAN_STATUS_ERROR == cur_fan_status
+    {
+        // 风扇异常时，检测到的ad值要与【风扇异常时对应的ad值】相隔一个死区，才认为风扇恢复正常
+        if (adc_val < ADC_VAL_WHEN_FAN_NORMAL)
+        {
+            flag_tim_scan_fan_is_err = 0;
+        }
+
+        // 风扇工作异常，限制pwm输出，占空比不超过25%
+        limited_pwm_duty_due_to_fan_err = PWM_DUTY_25_PERCENT;
+
+        // 如果是从 风扇正常工作 -> 风扇异常工作，才会执行下面的语句
+        // 到了风扇异常工作之后，立刻设置所有pwm通道可以调节的最大的占空比
+        if (FAN_STATUS_NORMAL == last_fan_status)
+        {
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+            adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+            last_fan_status = FAN_STATUS_ERROR;
+        }
+    }
 }

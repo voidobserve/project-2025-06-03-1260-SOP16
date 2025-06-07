@@ -227,7 +227,9 @@ void TIMR2_IRQHandler(void) interrupt TMR2_IRQn
                     }
                 }
 #endif
-
+                // =================================================================
+                // pwm_channel_0                                               //
+                // =================================================================
                 if (adjust_pwm_channel_0_duty > cur_pwm_channel_0_duty)
                 {
                     cur_pwm_channel_0_duty++;
@@ -247,6 +249,30 @@ void TIMR2_IRQHandler(void) interrupt TMR2_IRQn
                 else // 如果大于0
                 {
                     pwm_channel_0_enable();
+                }
+
+                // =================================================================
+                // pwm_channel_1                                               //
+                // =================================================================
+                if (adjust_pwm_channel_1_duty > cur_pwm_channel_1_duty)
+                {
+                    cur_pwm_channel_1_duty++;
+                }
+                else if (adjust_pwm_channel_1_duty < cur_pwm_channel_1_duty)
+                {
+                    cur_pwm_channel_1_duty--;
+                }
+
+                set_pwm_channel_1_duty(cur_pwm_channel_1_duty);
+
+                if (cur_pwm_channel_1_duty <= 0)
+                {
+                    // 小于某个值，直接输出0%占空比，关闭PWM输出，引脚配置为输出模式
+                    pwm_channel_1_disable();
+                }
+                else // 如果大于0
+                {
+                    pwm_channel_1_enable();
                 }
 
             } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节

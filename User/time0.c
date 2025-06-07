@@ -1,10 +1,9 @@
 #include "time0.h"
 
-u8 ms_cnt = 0;
+// u8 ms_cnt = 0;
 // volatile bit tmr0_flag = 0;
 
-
-static volatile u8 cnt_during_power_on = 0; // 开机缓启动，调节pwm占空比时，使用到的计数值
+static volatile u8 cnt_during_power_on = 0;       // 开机缓启动，调节pwm占空比时，使用到的计数值
 volatile bit flag_time_comes_during_power_on = 0; // 标志位，开机缓启动期间，调节时间到来
 
 /**
@@ -67,14 +66,14 @@ void TIMR0_IRQHandler(void) interrupt TMR0_IRQn
     {
         TMR0_CONH |= TMR_PRD_PND(0x1); // 清除pending
 
-        ms_cnt++;
+        // ms_cnt++;
         cnt_during_power_on++;
 
-        if (ms_cnt >= 25)
-        {
-            ms_cnt = 0;
-            // tmr0_flag = 1;
-        }
+        // if (ms_cnt >= 25)
+        // {
+        //     ms_cnt = 0;
+        //     // tmr0_flag = 1;
+        // }
 
         if (cnt_during_power_on >= 13) // 13ms
         {
@@ -84,8 +83,36 @@ void TIMR0_IRQHandler(void) interrupt TMR0_IRQn
 
         if (rf_key_para.cur_scan_times < 255)
         {
-            rf_key_para.cur_scan_times++;
+            rf_key_para.cur_scan_times++; // 用于433遥控器按键扫描
         }
+
+        { // 风扇状态检测，累计一段时间后更新状态
+            static u16 fan_normal_cnt = 0;
+            static u16 fan_err_cnt = 0;
+
+            if (flag_tim_scan_fan_is_err) // 如果检测到了风扇异常
+            {
+                fan_err_cnt++;
+                fan_normal_cnt = 0;
+
+                if (fan_err_cnt > FAN_SCAN_TIMES)
+                {
+                    fan_err_cnt = 0;
+                    cur_fan_status = FAN_STATUS_ERROR;
+                }
+            }
+            else
+            {
+                fan_normal_cnt++;
+                fan_err_cnt = 0;
+
+                if (fan_normal_cnt > FAN_SCAN_TIMES)
+                {
+                    fan_normal_cnt = 0;
+                    cur_fan_status = FAN_STATUS_NORMAL;
+                }
+            }
+        } // 风扇状态检测，累计一段时间后更新状态
     }
 
     // 退出中断设置IP，不可删除

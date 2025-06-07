@@ -5,24 +5,19 @@
 #include <stdio.h>
 
 // 由温度限制的PWM占空比 （对所有PWM通道都生效）
-extern volatile u16 limited_pwm_duty_due_to_temp; 
+extern volatile u16 limited_pwm_duty_due_to_temp;
 // 由于发动机不稳定，而限制的可以调节到的占空比（对所有PWM通道都生效，默认为最大占空比）
 extern volatile u16 limited_pwm_duty_due_to_unstable_engine;
- 
-extern volatile u16 adjust_duty;  // 要调整到的占空比
-extern volatile u16 c_duty;       // 当前设置的占空比
-// extern volatile u16 max_pwm_duty; // 存放占空比的上限值
+// 由于风扇异常，限制的可以调节到的最大占空比（对所有PWM通道都生效，默认为最大占空比）
+extern volatile u16 limited_pwm_duty_due_to_fan_err;
 
-extern volatile u16 cur_pwm_channel_0_duty;    // 当前设置的、 pwm_channle_0 的占空比
-extern volatile u16 adjust_pwm_channel_0_duty; // pwm_channle_0 要调整到的占空比
+extern volatile u16 cur_pwm_channel_0_duty;           // 当前设置的、 pwm_channle_0 的占空比
+extern volatile u16 expect_adjust_pwm_channel_0_duty; // 存放期望调节到的 pwm_channle_0 占空比
+extern volatile u16 adjust_pwm_channel_0_duty;        // pwm_channle_0 要调整到的占空比
 
-
-extern volatile u16 cur_pwm_channel_1_duty; // 当前设置的第二路PWN的占空比
-
-
-
-// extern volatile bit flag_is_pwm_channel_0_enable; // 标志位，pwm_channel_0 是否使能
-// extern volatile bit flag_is_pwm_channel_1_enable; // 标志位，pwm_channel_1 是否使能
+extern volatile u16 cur_pwm_channel_1_duty;    // 当前设置的第二路PWN的占空比
+volatile u16 expect_adjust_pwm_channel_1_duty; // 存放期望调节到的 pwm_channle_1 占空比
+extern volatile u16 adjust_pwm_channel_1_duty; // pwm_channle_1 要调整到的占空比
 
 #define MAX_PWM_DUTY (6000) // 100%占空比   (SYSCLK 4800 0000 /  8000  == 6000)
 enum
@@ -36,11 +31,6 @@ enum
 };
 
 void pwm_init(void);
-// void _My_Adjust_Pwm(float Val);
-// void _My_Adjust_Pwm(u16 Val);
-extern void set_pwm_duty(void);
-// extern void set_p15_pwm_duty(u8 set_duty); // 设置P15 15脚的PWM占空比
-// void Adaptive_Duty(void);
 
 // 电源电压低于170V-AC,启动低压保护，电源电压高于170V-AC，关闭低压保护
 void according_pin9_to_adjust_pwm(void);
@@ -48,14 +38,16 @@ void according_pin9_to_adjust_pin16(void); // 根据9脚的电压来设定16脚�
 
 extern u8 get_pwm_channel_0_status(void); // 获取第一路PWM的运行状态
 extern u8 get_pwm_channel_1_status(void); // 获取第二路PWM的运行状态
+
 extern void pwm_channel_0_enable(void);
 extern void pwm_channel_0_disable(void);
+
 extern void pwm_channel_1_enable(void);
 extern void pwm_channel_1_disable(void);
 
 void set_pwm_channel_0_duty(u16 channel_duty);
 void set_pwm_channel_1_duty(u16 channel_duty);
 
-u16 get_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty);
+u16 get_pwm_channel_x_adjust_duty(u16 pwm_adjust_duty);
 
 #endif

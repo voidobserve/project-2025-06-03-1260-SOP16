@@ -72,16 +72,23 @@ void adjust_pwm_duty_when_power_on(void)
     //     // break;
     //     return
     // }
-    if (c_duty < 6000)
+    // if (c_duty < 6000)
+    if (cur_pwm_channel_0_duty < MAX_PWM_DUTY &&
+        cur_pwm_channel_1_duty < MAX_PWM_DUTY)
     {
         mi = (step - 1) / (253 / 3) - 1;
         step += 0.5;
-        c_duty = pow(5, mi) * 60; // C 库函数 double pow(double x, double y) 返回 x 的 y 次幂
+        // cur_pwm_channel_0_duty = pow(5, mi) * 60; // C 库函数 double pow(double x, double y) 返回 x 的 y 次幂
+        // cur_pwm_channel_1_duty = pow(5, mi) * 60; // C 库函数 double pow(double x, double y) 返回 x 的 y 次幂
+        cur_pwm_channel_0_duty = pow(5, mi) * 60; // C 库函数 double pow(double x, double y) 返回 x 的 y 次幂
+        cur_pwm_channel_1_duty = cur_pwm_channel_0_duty;
     }
 
-    if (c_duty >= 6000)
+    if (cur_pwm_channel_0_duty >= MAX_PWM_DUTY ||
+        cur_pwm_channel_1_duty >= MAX_PWM_DUTY)
     {
-        c_duty = 6000;
+        cur_pwm_channel_0_duty = MAX_PWM_DUTY;
+        cur_pwm_channel_1_duty = MAX_PWM_DUTY;
     }
     // printf("c_duty %d\n",c_duty);
 
@@ -137,10 +144,14 @@ void main(void)
 // ===================================================================
 #if 0 // 开机缓慢启动（PWM信号变化平缓）
     P14 = 0; // 16脚先输出低电平
-    c_duty = 0;
+    // c_duty = 0;
+    cur_pwm_channel_0_duty = 0;
+    cur_pwm_channel_1_duty = 0;
     flag_is_in_power_on = 1; // 表示到了开机缓启动
     // while (c_duty < 6000)
-    while (c_duty < limited_max_pwm_duty) // 当c_duty 大于 限制的最大占空比后，退出
+    // while (c_duty < limited_max_pwm_duty) // 当c_duty 大于 限制的最大占空比后，退出
+    while (cur_pwm_channel_0_duty < limited_max_pwm_duty || /* 当 cur_pwm_channel_0_duty 大于 限制的最大占空比后，退出 */
+           cur_pwm_channel_1_duty < limited_max_pwm_duty)   /* 当 cur_pwm_channel_1_duty 大于 限制的最大占空比后，退出 */
     {
         adc_update_pin_9_adc_val();        // 采集并更新9脚的ad值
         update_max_pwm_duty_coefficient(); // 更新当前的最大占空比
@@ -151,19 +162,21 @@ void main(void)
 
 #endif
 
-        if (flag_is_pwm_sub_time_comes) // pwm递减时间到来
+        if (flag_is_pwm_sub_time_comes) // pwm递减时间到来（该标志位主要用在发动机功率不稳定检测中）
         {
             flag_is_pwm_sub_time_comes = 0;
 
             /*
-                只要有一次跳动，退出开机缓启动(改成等到变为100%占空比再退出)，
-                由于adjust_duty初始值为6000，直接退出会直接设置占空比为adjust_duty对应的值，
+                只要有一次跳动，退出开机缓启动(改成等到变为 limited_max_pwm_duty 再退出)，
+                由于 adjust_duty 初始值为 MAX_PWM_DUTY ，直接退出会直接设置占空比为 adjust_duty 对应的值，
                 会导致灯光闪烁一下
             */
             if (adc_val_pin_9 >= ADC_VAL_WHEN_UNSTABLE)
             {
                 // if (c_duty >= PWM_DUTY_100_PERCENT)
-                if (c_duty >= limited_max_pwm_duty)
+                // if (c_duty >= limited_max_pwm_duty)
+                if (cur_pwm_channel_0_duty >= limited_max_pwm_duty &&
+                    cur_pwm_channel_1_duty >= limited_max_pwm_duty)
                 {
                     // adjust_duty = c_duty;
                     break;
@@ -177,8 +190,10 @@ void main(void)
             adjust_pwm_duty_when_power_on();
         }
 
-        set_pwm_duty(); // 将 c_duty 写入pwm对应的寄存器
-        set_p15_pwm_duty(c_duty);
+        set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
+        set_pwm_channel_1_duty(cur_pwm_channel_1_duty);
+        // set_pwm_duty(); // 将 c_duty 写入pwm对应的寄存器
+        // set_p15_pwm_duty(c_duty);
 
 #if USE_MY_DEBUG
         // printf("power_on_duty %u\n", c_duty);
@@ -186,12 +201,15 @@ void main(void)
     }
 #endif // 开机缓慢启动（PWM信号变化平缓）
 
-// MY_DEBUG:
-    c_duty = MAX_PWM_DUTY; // 测试用
-    cur_pwm_channel_0_duty = MAX_PWM_DUTY; // 测试用
+    // MY_DEBUG:
+    cur_pwm_channel_0_duty = MAX_PWM_DUTY;          // 测试用
     set_pwm_channel_0_duty(cur_pwm_channel_0_duty); // 测试用
+    cur_pwm_channel_1_duty = MAX_PWM_DUTY;          // 测试用
+    set_pwm_channel_1_duty(cur_pwm_channel_1_duty); // 测试用
 
-    adjust_duty = c_duty;    // 缓启动后，立即更新 adjust_duty 的值
+    // 缓启动后，立即更新 adjust_duty 的值：
+    adjust_pwm_channel_0_duty = cur_pwm_channel_0_duty;
+    adjust_pwm_channel_1_duty = cur_pwm_channel_1_duty;
     flag_is_in_power_on = 0; // 表示退出了开机缓启动
     // ===================================================================
 
@@ -205,13 +223,24 @@ void main(void)
     // c_duty = MAX_PWM_DUTY * 5 / 1000;
     // delay_ms(1000);
 
+    printf("cur pwm_channel_0_duty %u\n", cur_pwm_channel_0_duty);
+    printf("cur pwm_channel_1_duty %u\n", cur_pwm_channel_1_duty);
+
+    printf("adjust_pwm_channel_0_duty %u\n", adjust_pwm_channel_0_duty);
+    printf("adjust_pwm_channel_1_duty %u\n", adjust_pwm_channel_1_duty);
+
+    printf("limited_pwm_duty_due_to_temp %u\n", limited_pwm_duty_due_to_temp);
+    printf("limited_pwm_duty_due_to_unstable_engine %u\n", limited_pwm_duty_due_to_unstable_engine);
+
+    // limited_max_pwm_duty = 5000;
+
     while (1)
     {
-
 #if 1
         adc_update_pin_9_adc_val(); // 采集并更新9脚的ad值（9脚，检测发动机功率是否稳定的引脚）
-        update_max_pwm_duty_coefficient(); // 根据当前旋钮的挡位，限制能调节到的最大的pwm占空比
+        // update_max_pwm_duty_coefficient(); // 根据当前旋钮的挡位，限制能调节到的最大的pwm占空比
         // temperature_scan();               // 检测热敏电阻一端的电压值
+        // fan_scan();
         set_duty();                       // 设定到要调节到的脉宽 (设置adjust_duty)
         according_pin9_to_adjust_pin16(); // 根据9脚的电压来设定16脚的电平
 
@@ -229,13 +258,60 @@ void main(void)
         //     printf("recv data: 0x %lx\n", rf_data);
         // }
 
-        {
-            if (flag_is_rf_enable) // 如果使能了rf遥控器的功能
+        // MY_DEBUG:
+        { // 测试时，人为改变由于发动机功率不稳定而限制的值，并更新 adjust_pwm_channel_x_duty
+            static u16 last_limited_pwm_duty_due_to_unstable_engine = MAX_PWM_DUTY;
+            if (last_limited_pwm_duty_due_to_unstable_engine != limited_pwm_duty_due_to_unstable_engine)
             {
-                key_driver_scan(&rf_key_para);
-                rf_key_handle();
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+                last_limited_pwm_duty_due_to_unstable_engine = limited_pwm_duty_due_to_unstable_engine;
             }
         }
+
+        // MY_DEBUG:
+        { // 测试时，人为改变旋钮限制的最大占空比对应的值，并更新 adjust_pwm_channel_x_duty
+            static u16 last_limited_max_pwm_duty = MAX_PWM_DUTY;
+            if (last_limited_max_pwm_duty != limited_max_pwm_duty)
+            {
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+                last_limited_max_pwm_duty = limited_max_pwm_duty;
+            }
+        }
+
+        if (flag_is_rf_enable) // 如果使能了rf遥控器的功能
+        {
+            key_driver_scan(&rf_key_para);
+            rf_key_handle();
+        }
+
+        // TO_DO:
+        // 待修改测试的代码：
+        // { 
+        //     adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_0_duty);
+        //     adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_1_duty);
+        // } 
+
+        {
+            static u16 cnt = 0;
+            cnt++;
+            if (cnt >= 200)
+            {
+                cnt = 0;
+                printf("cur_pwm_channel_0_duty: %u\n", cur_pwm_channel_0_duty);
+                printf("cur_pwm_channel_1_duty: %u\n", cur_pwm_channel_1_duty);
+            }
+        }
+
+        // printf("cur pwm_channel_0_duty %u\n", cur_pwm_channel_0_duty);
+        // printf("cur pwm_channel_1_duty %u\n", cur_pwm_channel_1_duty);
+
+        // printf("adjust_pwm_channel_0_duty %u\n", adjust_pwm_channel_0_duty);
+        // printf("adjust_pwm_channel_1_duty %u\n", adjust_pwm_channel_1_duty);
+
+        // printf("limited_pwm_duty_due_to_temp %u\n", limited_pwm_duty_due_to_temp);
+        // printf("limited_pwm_duty_due_to_unstable_engine %u\n", limited_pwm_duty_due_to_unstable_engine);
     }
 }
 

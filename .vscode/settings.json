@@ -6,6 +6,7 @@
         "debug.h": "c",
         "include.h": "c",
         "pwm.h": "c",
-        "time0.h": "c"
+        "time0.h": "c",
+        "key_driver.h": "c"
     }
 }

@@ -73,6 +73,31 @@ enum RF_KEY_EVENT
     RF_KEY_EVENT_ID_12_LONG,
     RF_KEY_EVENT_ID_12_HOLD,
     RF_KEY_EVENT_ID_12_LOOSE,
+
+#if USE_MY_TEST_433_REMOTE
+
+    // 测试时使用到的按键事件，实际不使用
+    RF_KEY_EVENT_ID_TEST_1_CLICK,
+    RF_KEY_EVENT_ID_TEST_1_LONG,
+    RF_KEY_EVENT_ID_TEST_1_HOLD,
+    RF_KEY_EVENT_ID_TEST_1_LOOSE,
+
+    RF_KEY_EVENT_ID_TEST_2_CLICK,
+    RF_KEY_EVENT_ID_TEST_2_LONG,
+    RF_KEY_EVENT_ID_TEST_2_HOLD,
+    RF_KEY_EVENT_ID_TEST_2_LOOSE,
+
+    RF_KEY_EVENT_ID_TEST_3_CLICK,
+    RF_KEY_EVENT_ID_TEST_3_LONG,
+    RF_KEY_EVENT_ID_TEST_3_HOLD,
+    RF_KEY_EVENT_ID_TEST_3_LOOSE,
+
+    RF_KEY_EVENT_ID_TEST_4_CLICK,
+    RF_KEY_EVENT_ID_TEST_4_LONG,
+    RF_KEY_EVENT_ID_TEST_4_HOLD,
+    RF_KEY_EVENT_ID_TEST_4_LOOSE,
+
+#endif // #if USE_MY_TEST_433_REMOTE
 };
 
 #define RF_KEY_EFFECT_EVENT_NUMS (4) // 单个触摸按键的有效按键事件个数 (单击、长按、持续、松开)
@@ -91,6 +116,15 @@ static const u8 rf_key_event_table[][RF_KEY_EFFECT_EVENT_NUMS + 1] = {
     {RF_KEY_ID_10, RF_KEY_EVENT_ID_10_CLICK, RF_KEY_EVENT_ID_10_LONG, RF_KEY_EVENT_ID_10_HOLD, RF_KEY_EVENT_ID_10_LOOSE}, //
     {RF_KEY_ID_11, RF_KEY_EVENT_ID_11_CLICK, RF_KEY_EVENT_ID_11_LONG, RF_KEY_EVENT_ID_11_HOLD, RF_KEY_EVENT_ID_11_LOOSE}, //
     {RF_KEY_ID_12, RF_KEY_EVENT_ID_12_CLICK, RF_KEY_EVENT_ID_12_LONG, RF_KEY_EVENT_ID_12_HOLD, RF_KEY_EVENT_ID_12_LOOSE}, //
+
+#if USE_MY_TEST_433_REMOTE
+
+    {RF_KEY_ID_TEST_1, RF_KEY_EVENT_ID_TEST_1_CLICK, RF_KEY_EVENT_ID_TEST_1_LONG, RF_KEY_EVENT_ID_TEST_1_HOLD, RF_KEY_EVENT_ID_TEST_1_LOOSE}, //
+    {RF_KEY_ID_TEST_2, RF_KEY_EVENT_ID_TEST_2_CLICK, RF_KEY_EVENT_ID_TEST_2_LONG, RF_KEY_EVENT_ID_TEST_2_HOLD, RF_KEY_EVENT_ID_TEST_2_LOOSE}, //
+    {RF_KEY_ID_TEST_3, RF_KEY_EVENT_ID_TEST_3_CLICK, RF_KEY_EVENT_ID_TEST_3_LONG, RF_KEY_EVENT_ID_TEST_3_HOLD, RF_KEY_EVENT_ID_TEST_3_LOOSE}, //
+    {RF_KEY_ID_TEST_4, RF_KEY_EVENT_ID_TEST_4_CLICK, RF_KEY_EVENT_ID_TEST_4_LONG, RF_KEY_EVENT_ID_TEST_4_HOLD, RF_KEY_EVENT_ID_TEST_4_LOOSE}, //
+
+#endif // #if USE_MY_TEST_433_REMOTE
 };
 
 extern u8 rf_key_get_key_id(void);
@@ -195,6 +229,26 @@ void rf_key_handle(void)
 
     // 可能要在这里读取 rf_key_para.latest_key_event
     // 看看是不是 HOLD，如果是第一次长按，累计几次后进行对码操作
+    { // 用于进行对码的代码块
+        static u16 hold_cnt;
+        static u8 last_key_val;
+
+        if (last_key_val == rf_key_para.latest_key_val)
+        {
+            if (rf_key_para.latest_key_event == KEY_EVENT_HOLD)
+            {
+                if (hold_cnt < 65535)
+                {
+                    hold_cnt++;
+
+                    // if (hold_cnt 大于某个阈值)
+                    {
+                        // 存放对码的地址
+                    }
+                }
+            }
+        }
+    } // 用于进行对码的代码块
 
     rf_key_event = __rf_key_get_event(rf_key_para.latest_key_val, rf_key_para.latest_key_event);
     rf_key_para.latest_key_val = RF_KEY_ID_NONE;
@@ -202,51 +256,158 @@ void rf_key_handle(void)
 
     switch (rf_key_event)
     {
-    case RF_KEY_EVENT_ID_1_CLICK:
+    case RF_KEY_EVENT_ID_1_CLICK: // ON/OFF
 
-        printf("key 1 click\n");
+        // printf("key 1 click\n");
+
+        // 只要有一路开启，便认为灯光已经打开：
+        if (get_pwm_channel_0_status() || get_pwm_channel_1_status())
+        {
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(0);
+            adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(0);
+
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+            cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
+
+            set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+            set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+
+            pwm_channel_0_disable();
+            pwm_channel_1_disable();
+
+            // printf("all pwm channels are disable\n");
+        }
+        else
+        {
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(MAX_PWM_DUTY);
+            adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(MAX_PWM_DUTY);
+            // adjust_pwm_channel_1_duty = adjust_pwm_channel_0_duty;
+
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+            set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+
+            cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
+            set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+
+            pwm_channel_0_enable();
+            pwm_channel_1_enable();
+
+            // printf("all pwm channels are enable\n");
+        }
 
         break;
 
-    case RF_KEY_EVENT_ID_2_CLICK:
+    case RF_KEY_EVENT_ID_2_CLICK: // 1+2按键，亮度设置为100%
 
-        printf("key 2 click\n");
+        // printf("key 2 click\n");
+        // 只要有一路开启，便认为灯光已经打开：
+        if (get_pwm_channel_0_status() || get_pwm_channel_1_status())
+        {
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_100_PERCENT);
+            adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_100_PERCENT);
 
-        break;
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+            cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
 
-    case RF_KEY_EVENT_ID_3_CLICK:
-
-        printf("key 3 click\n");
-
-        break;
-
-    case RF_KEY_EVENT_ID_4_CLICK:
-
-        printf("key 4 click\n");
-
-        break;
-
-    case RF_KEY_EVENT_ID_5_CLICK:
-
-        printf("key 5 click\n");
+            set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+            set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+        }
 
         break;
 
-    case RF_KEY_EVENT_ID_6_CLICK:
+    case RF_KEY_EVENT_ID_3_CLICK: // pwm_channel_0 duty++
 
-        printf("key 6 click\n");
+        // printf("key 3 click\n");
+
+        if (get_pwm_channel_0_status()) // 如果PWM已经使能
+        {
+            u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+
+            if (adjust_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
+            {
+                // expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制的占空比为100%）
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+            }
+        }
 
         break;
 
-    case RF_KEY_EVENT_ID_7_CLICK:
+    case RF_KEY_EVENT_ID_4_CLICK: // pwm_channel_1 duty++
 
-        printf("key 7 click\n");
+        // printf("key 4 click\n");
+
+        if (get_pwm_channel_1_status()) // 如果PWM已经使能
+        {
+            u16 expected_pwm_duty = adjust_pwm_channel_1_duty; // 存放期望设定的pwm占空比
+
+            if (adjust_pwm_channel_1_duty < PWM_DUTY_100_PERCENT)
+            {
+                // expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制的占空比为100%）
+                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+            }
+        }
 
         break;
 
-    case RF_KEY_EVENT_ID_8_CLICK:
+    case RF_KEY_EVENT_ID_5_CLICK: // set pwm_channel_0 50%
 
-        printf("key 8 click\n");
+        // printf("key 5 click\n");
+        if (get_pwm_channel_0_status()) // 如果PWM已经使能
+        {
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_50_PERCENT);
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
+            set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
+        }
+
+        break;
+
+    case RF_KEY_EVENT_ID_6_CLICK: // set pwm_channel_1 50%
+
+        // printf("key 6 click\n");
+        if (get_pwm_channel_1_status()) // 如果PWM已经使能
+        {
+            adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_50_PERCENT);
+            cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty; // 更新当前的占空比对应的数值
+            set_pwm_channel_1_duty(adjust_pwm_channel_1_duty);
+        }
+
+        break;
+
+    case RF_KEY_EVENT_ID_7_CLICK: // pwm_channel_0 duty--
+
+        // printf("key 7 click\n");
+
+        if (get_pwm_channel_0_status()) // 如果PWM已经使能
+        {
+            u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
+
+            if (adjust_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比大于最大占空比的5%
+            {
+                // expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制的占空比为100%）
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+            }
+        }
+
+        break;
+
+    case RF_KEY_EVENT_ID_8_CLICK: // pwm_channel_1 duty--
+
+        // printf("key 8 click\n");
+
+        if (get_pwm_channel_1_status()) // 如果PWM已经使能
+        {
+            u16 expected_pwm_duty = adjust_pwm_channel_1_duty; // 存放期望设定的pwm占空比
+
+            if (adjust_pwm_channel_1_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比大于最大占空比的5%
+            {
+                // expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制的占空比为100%）
+                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
+            }
+        }
 
         break;
 
@@ -269,8 +430,9 @@ void rf_key_handle(void)
 
             if (adjust_pwm_channel_0_duty < PWM_DUTY_100_PERCENT)
             {
-                expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
-                adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
+                // expected_pwm_duty += (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制的占空比为100%）
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
             }
         }
 
@@ -278,13 +440,13 @@ void rf_key_handle(void)
 
     case RF_KEY_EVENT_ID_10_CLICK: // 设置占空比为50%
 
-        printf("key 10 click\n");
+        // printf("key 10 click\n");
         if (get_pwm_channel_0_status()) // 如果PWM已经使能
         {
             // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(PWM_DUTY_50_PERCENT);
             // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
-            adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(PWM_DUTY_50_PERCENT);
-            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty;// 更新当前的占空比对应的数值
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(PWM_DUTY_50_PERCENT);
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
             set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
         }
 
@@ -292,25 +454,18 @@ void rf_key_handle(void)
 
     case RF_KEY_EVENT_ID_11_CLICK: // 减小PWM占空比
 
-        printf("key 11 click\n");
+        // printf("key 11 click\n");
 
         if (get_pwm_channel_0_status()) // 如果PWM已经使能
         {
-            // u16 expected_pwm_duty = cur_pwm_channel_0_duty; // 存放期望设定的pwm占空比
-
-            // if (cur_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比大于最大占空比的5%
-            // {
-            //     expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
-            //     cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
-            //     set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
-            // }
 
             u16 expected_pwm_duty = adjust_pwm_channel_0_duty; // 存放期望设定的pwm占空比
 
             if (adjust_pwm_channel_0_duty > (PWM_DUTY_100_PERCENT * 5 / 100)) // 如果当前pwm占空比大于最大占空比的5%
             {
-                expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
-                adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(expected_pwm_duty);
+                // expected_pwm_duty -= (PWM_DUTY_100_PERCENT * 5 / 100); // 每次调节5%
+                expected_pwm_duty += (limited_max_pwm_duty * 5 / 100); // 每次调节5%（以旋钮限制的占空比为100%）
+                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expected_pwm_duty);
                 // set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
             }
         }
@@ -322,50 +477,65 @@ void rf_key_handle(void)
         // printf("key 12 click\n");
         if (get_pwm_channel_0_status()) // 如果PWM已经使能
         {
-            // flag_is_pwm_channel_0_enable = 0; // 禁止timer2调节pwm
-            // limited_adjust_pwm_duty = 0;
-            // adjust_duty = 0;
-            // c_duty = 0;
-
-            // c_duty = get_pwm_channel_0_adjust_duty(0);
-            // set_pwm_duty();
-
-            // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(0);
-            // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
-
-            adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(0);
-            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty;// 更新当前的占空比对应的数值
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(0);
+            cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
             set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
             pwm_channel_0_disable();
-            printf("pwm channel 0 is disable\n");
+            // printf("pwm channel 0 is disable\n");
         }
         else // 如果PWM未使能
         {
-            // adjust_duty = MAX_PWM_DUTY;
-            // limited_adjust_pwm_duty = (u32)adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // adjust_duty * 旋钮限制的占空比系数
-            // c_duty = limited_adjust_pwm_duty;
-            // flag_is_pwm_channel_0_enable = 1; // 允许timer2调节pwm
-
-            // c_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
-            // set_pwm_duty();
-
-            // cur_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
-            // set_pwm_channel_0_duty(cur_pwm_channel_0_duty);
-
-            adjust_pwm_channel_0_duty = get_pwm_channel_0_adjust_duty(MAX_PWM_DUTY);
+            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(MAX_PWM_DUTY);
             cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty; // 更新当前的占空比对应的数值
             set_pwm_channel_0_duty(adjust_pwm_channel_0_duty);
             pwm_channel_0_enable();
-            printf("pwm channel 0 is enable\n");
+            // printf("pwm channel 0 is enable\n");
         }
 
         break;
 
     case RF_KEY_EVENT_ID_12_HOLD:
 
-        printf("key 12 hold\n");
+        // printf("key 12 hold\n");
 
         break;
+
+#if USE_MY_TEST_433_REMOTE
+
+    case RF_KEY_EVENT_ID_TEST_1_CLICK:
+
+        printf("test 1 click\n");
+        if (limited_max_pwm_duty < (MAX_PWM_DUTY - 500))
+        {
+            limited_max_pwm_duty += 500;
+        }
+
+        break;
+
+    case RF_KEY_EVENT_ID_TEST_2_CLICK:
+
+        printf("test 2 click\n");
+
+        if (limited_max_pwm_duty > (0 + 500))
+        {
+            limited_max_pwm_duty -= 500;
+        }
+
+        break;
+
+    case RF_KEY_EVENT_ID_TEST_3_CLICK:
+
+        printf("test 3 click\n");
+
+        break;
+
+    case RF_KEY_EVENT_ID_TEST_4_CLICK:
+
+        printf("test 4 click\n");
+
+        break;
+
+#endif // #if USE_MY_TEST_433_REMOTE
 
     default:
         break;
@@ -374,12 +544,18 @@ void rf_key_handle(void)
 
 void rf_recv_init(void)
 {
-#if 1 // 测试时使用，在开发板上使用 P01 脚，用于检测rf信号
+// MY_DEBUG:
+#if USE_MY_TEST_PIN // 测试时使用，在开发板上使用 P01 脚，用于检测rf信号
 
     P0_PU |= GPIO_P01_PULL_UP(0x01);      // 上拉
     P0_MD0 &= ~(GPIO_P01_MODE_SEL(0x03)); // 输入模式
 
-#endif // 测试时使用
+#else // 实际用到的、非测试时使用的rf信号检测引脚：
+
+    P0_PU |= GPIO_P03_PULL_UP(0x01);      // 上拉
+    P0_MD0 &= ~(GPIO_P03_MODE_SEL(0x03)); // 输入模式
+
+#endif // #if USE_MY_TEST_PIN
 
     // 检测有无433遥控器功能的引脚：
     P1_PU |= GPIO_P11_PULL_UP(0x01);      // 上拉
@@ -394,7 +570,7 @@ void rf_recv_init(void)
         flag_is_rf_enable = 0;
     }
 
-// MY_DEBUG:
+    // MY_DEBUG:
     flag_is_rf_enable = 1; // 测试时使用（使能433遥控的功能）
     // flag_is_rf_enable = 0; // 测试时使用
 }

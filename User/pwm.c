@@ -4,29 +4,17 @@
 // 由温度限制的PWM占空比 （对所有PWM通道都生效，默认为最大占空比）
 volatile u16 limited_pwm_duty_due_to_temp = MAX_PWM_DUTY;
 // 由于发动机不稳定，而限制的可以调节到的占空比（对所有PWM通道都生效，默认为最大占空比）
-volatile u16 limited_pwm_duty_due_to_unstable_engine = MAX_PWM_DUTY; 
+volatile u16 limited_pwm_duty_due_to_unstable_engine = MAX_PWM_DUTY;
+// 由于风扇异常，限制的可以调节到的最大占空比（对所有PWM通道都生效，默认为最大占空比）
+volatile u16 limited_pwm_duty_due_to_fan_err = MAX_PWM_DUTY;
 
+volatile u16 cur_pwm_channel_0_duty;                          // 当前设置的、 pwm_channle_0 的占空比（只有遥控器指定要修改它的值或是定时器缓慢调节，才会被修改）
+volatile u16 expect_adjust_pwm_channel_0_duty = MAX_PWM_DUTY; // 存放期望调节到的 pwm_channle_0 占空比
+volatile u16 adjust_pwm_channel_0_duty = MAX_PWM_DUTY;        // pwm_channle_0 要调整到的占空比
 
-
-volatile u16 c_duty = 0;                // 当前设置的占空比
-volatile u16 cur_pwm_channel_0_duty;    // 当前设置的、 pwm_channle_0 的占空比
-volatile u16 adjust_pwm_channel_0_duty; // pwm_channle_0 要调整到的占空比
-
-volatile u16 cur_pwm_channel_1_duty = 0; // 当前设置的第二路PWM的占空比
-volatile u16 adjust_duty = MAX_PWM_DUTY; // 最终要调节成的占空比（只有开机缓启动、温度检测、发送机电压不稳定检测才会修改它的值）
-// volatile u16 max_pwm_duty = MAX_PWM_DUTY;        // 存放占空比的上限值
-
-/*
-    标志位，pwm_channel_0 是否使能（只在rf遥控器调节中使用）
-    默认为1，防止在定时器调节pwm时不工作
-*/
-volatile bit flag_is_pwm_channel_0_enable = 1;
-
-/*
-    标志位，pwm_channel_1 是否使能（只在rf遥控器调节中使用）
-    默认为1，防止在定时器调节pwm时不工作
-*/
-volatile bit flag_is_pwm_channel_1_enable = 1;
+volatile u16 cur_pwm_channel_1_duty;                          // 当前设置的第二路PWM的占空比（只有遥控器指定要修改它的值或是定时器缓慢调节，才会被修改）
+volatile u16 expect_adjust_pwm_channel_1_duty = MAX_PWM_DUTY; // 存放期望调节到的 pwm_channle_1 占空比
+volatile u16 adjust_pwm_channel_1_duty = MAX_PWM_DUTY;        // pwm_channle_1 要调整到的占空比
 
 #define STMR0_PEROID_VAL (SYSCLK / 8000 - 1)
 #define STMR1_PEROID_VAL (SYSCLK / 8000 - 1)
@@ -69,25 +57,15 @@ void pwm_init(void)
     STMR_CNTEN |= STMR_1_CNT_EN(0x1);   // 使能
     STMR_PWMEN |= STMR_1_PWM_EN(0x1);   // PWM输出使能
 
+#if USE_MY_TEST_PIN
+    P0_MD1 &= ~GPIO_P05_MODE_SEL(0x03); // 用开发板上的 p05
+    P0_MD1 |= GPIO_P05_MODE_SEL(0x01);  // 输出模式
+    FOUT_S05 = GPIO_FOUT_STMR1_PWMOUT;  // 选择stmr1_pwmout
+#else
     P1_MD1 &= ~GPIO_P15_MODE_SEL(0x03); // P15 15脚
     P1_MD1 |= GPIO_P15_MODE_SEL(0x01);  // 输出模式
     FOUT_S15 = GPIO_FOUT_STMR1_PWMOUT;  // 选择stmr1_pwmout
-}
-
-// 14脚的PWM调节
-void set_pwm_duty(void)
-{
-    STMR0_CMPAH = STMR_CMPA_VAL_H(((c_duty) >> 8) & 0xFF); // 比较值
-    STMR0_CMPAL = STMR_CMPA_VAL_L(((c_duty) >> 0) & 0xFF); // 比较值
-    STMR_LOADEN |= STMR_0_LOAD_EN(0x1);                    // 自动装载使能
-}
-
-// 设置P15 15脚的PWM占空比
-void set_p15_pwm_duty(u16 set_duty)
-{
-    STMR1_CMPAH = STMR_CMPA_VAL_H(((set_duty) >> 8) & 0xFF); // 比较值
-    STMR1_CMPAL = STMR_CMPA_VAL_L(((set_duty) >> 0) & 0xFF); // 比较值
-    STMR_LOADEN |= STMR_1_LOAD_EN(0x1);                      // 自动装载使能
+#endif //  #if USE_MY_TEST_PIN
 }
 
 // 设置通道0的占空比
@@ -128,6 +106,8 @@ static volatile u16 buff_index_2 = 0;         // 用于滤波的数组下标
 */
 void according_pin9_to_adjust_pwm(void)
 {
+    static u16 last_limited_pwm_duty_due_to_unstable_engine = MAX_PWM_DUTY;
+
 #define ADC_DEAD_ZONE_NEAR_170VAC (30) // 170VAC附近的ad值死区
     static volatile u16 filter_buff[32] = {
         0xFFFF,
@@ -228,51 +208,23 @@ void according_pin9_to_adjust_pwm(void)
         flag_is_sub_power = 0;
         flag_is_sub_power2 = 0;
         flag_is_add_power = 1;
-#if 0
-        // 判断是否变化PWM
-        if (adc_pin_9_avg > ADC_VAL_WHEN_UNSTABLE) // 9脚电压超过不稳定阈值对应的电压
-        {
-            if (flag_is_pwm_sub_time_comes) // pwm占空比递减时间到来
-            {
-                flag_is_pwm_sub_time_comes = 0;
-                // 过载 pwm--
-                // if (adjust_duty > PWM_DUTY_50_PERCENT)
-                if (adjust_duty > PWM_DUTY_30_PERCENT)
-                {
-                    adjust_duty -= 1;
-                }
-                else
-                {
-                    // adjust_duty = PWM_DUTY_50_PERCENT;
-                    adjust_duty = PWM_DUTY_30_PERCENT;
-                }
-            }
-        }
-        else if (adc_pin_9_avg < (ADC_VAL_WHEN_UNSTABLE - 50))
-        {
-            // 未满载 pwm++
-            if (flag_is_pwm_add_time_comes) // pwm占空比递增时间到来
-            {
-                flag_is_pwm_add_time_comes = 0;
-                if (adjust_duty < 6000)
-                {
-                    adjust_duty++;
-                }
-            }
-        }
-#else
+
         if (over_drive_status == OVER_DRIVE_RESTART_TIME) // 9脚电压超过不稳定阈值对应的电压
         {
             over_drive_status -= 1;
-            if (adjust_duty > PWM_DUTY_50_PERCENT)
+            // if (adjust_duty > PWM_DUTY_50_PERCENT)
+            if (limited_pwm_duty_due_to_unstable_engine > PWM_DUTY_50_PERCENT)
             {
                 // adjust_duty -= 300; // 变化太大，会造成灯光闪烁
-                adjust_duty -= 1;
+                // adjust_duty -= 1;
+                limited_pwm_duty_due_to_unstable_engine -= 1;
             }
 
-            if (adjust_duty < PWM_DUTY_50_PERCENT)
+            // if (adjust_duty < PWM_DUTY_50_PERCENT)
+            if (limited_pwm_duty_due_to_unstable_engine < PWM_DUTY_50_PERCENT)
             {
-                adjust_duty = PWM_DUTY_50_PERCENT;
+                // adjust_duty = PWM_DUTY_50_PERCENT;
+                limited_pwm_duty_due_to_unstable_engine = PWM_DUTY_50_PERCENT;
             }
         }
         else if (over_drive_status == 0)
@@ -281,13 +233,14 @@ void according_pin9_to_adjust_pwm(void)
             if (flag_is_pwm_add_time_comes) // pwm占空比递增时间到来
             {
                 flag_is_pwm_add_time_comes = 0;
-                if (adjust_duty < PWM_DUTY_100_PERCENT)
+                // if (adjust_duty < PWM_DUTY_100_PERCENT)
+                if (limited_pwm_duty_due_to_unstable_engine < PWM_DUTY_100_PERCENT)
                 {
-                    adjust_duty++;
+                    // adjust_duty++;
+                    limited_pwm_duty_due_to_unstable_engine++;
                 }
             }
         }
-#endif
     }
     else if (adc_pin_9_avg > (1475) && (adc_pin_9_avg <= (1645 /*1475*/) || flag_is_sub_power == 4)) // 小于 170VAC
     {
@@ -305,18 +258,23 @@ void according_pin9_to_adjust_pwm(void)
             flag_is_sub_power2 = 0;
             flag_is_add_power = 0;
 
-            if (adjust_duty > PWM_DUTY_50_PERCENT)
             // if (adjust_duty > PWM_DUTY_30_PERCENT)
+            // if (adjust_duty > PWM_DUTY_50_PERCENT)
+            if (limited_pwm_duty_due_to_unstable_engine > PWM_DUTY_50_PERCENT)
             {
-                adjust_duty -= 2;
+                // adjust_duty -= 2;
+                limited_pwm_duty_due_to_unstable_engine -= 2;
             }
-            else if (adjust_duty < PWM_DUTY_50_PERCENT)
+            // else if (adjust_duty < PWM_DUTY_50_PERCENT)
+            else if (limited_pwm_duty_due_to_unstable_engine < PWM_DUTY_50_PERCENT)
             {
-                adjust_duty++;
+                // adjust_duty++;
+                limited_pwm_duty_due_to_unstable_engine++;
             }
             else
             {
-                adjust_duty = PWM_DUTY_50_PERCENT;
+                // adjust_duty = PWM_DUTY_50_PERCENT;
+                limited_pwm_duty_due_to_unstable_engine = PWM_DUTY_50_PERCENT;
             }
         }
     }
@@ -334,16 +292,27 @@ void according_pin9_to_adjust_pwm(void)
             flag_is_add_power = 0;
 
             // if (adjust_duty > PWM_DUTY_50_PERCENT)
-            if (adjust_duty > PWM_DUTY_30_PERCENT)
+            // if (adjust_duty > PWM_DUTY_30_PERCENT)
+            if (limited_pwm_duty_due_to_unstable_engine > PWM_DUTY_30_PERCENT)
             {
-                adjust_duty -= 2;
+                // adjust_duty -= 2;
+                limited_pwm_duty_due_to_unstable_engine -= 2;
             }
             else
             {
                 // adjust_duty = PWM_DUTY_50_PERCENT;
-                adjust_duty = PWM_DUTY_30_PERCENT;
+                // adjust_duty = PWM_DUTY_30_PERCENT;
+                limited_pwm_duty_due_to_unstable_engine = PWM_DUTY_30_PERCENT;
             }
         }
+    }
+
+    // 如果 limited_pwm_duty_due_to_unstable_engine 改变，这里要更新 adjust_pwm_channel_ x _duty 的状态
+    if (last_limited_pwm_duty_due_to_unstable_engine != limited_pwm_duty_due_to_unstable_engine)
+    {
+        adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+        adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+        last_limited_pwm_duty_due_to_unstable_engine = limited_pwm_duty_due_to_unstable_engine;
     }
 }
 
@@ -413,34 +382,45 @@ void pwm_channel_0_disable(void)
 void pwm_channel_1_enable(void)
 {
     // 要先使能PWM输出，在配置IO，否则在逻辑分析仪上看会有个缺口
-    STMR_PWMEN |= 0x01 << 1;           // 使能PWM1的输出
+    STMR_PWMEN |= 0x01 << 1; // 使能PWM1的输出
+
+#if USE_MY_TEST_PIN
+    FOUT_S05 = GPIO_FOUT_STMR1_PWMOUT; // stmr1_pwmout
+#else
     FOUT_S15 = GPIO_FOUT_STMR1_PWMOUT; // stmr1_pwmout
+#endif
 }
 
 void pwm_channel_1_disable(void)
 {
     // 直接输出0%的占空比，可能会有些跳动，需要将对应的引脚配置回输出模式
-    STMR_PWMEN &= ~(0x01 << 1);   // 不使能PWM1的输出
+    STMR_PWMEN &= ~(0x01 << 1); // 不使能PWM1的输出
+
+#if USE_MY_TEST_PIN
+    FOUT_S05 = GPIO_FOUT_AF_FUNC; //;
+    P05 = 1;                      // 高电平为关灯
+#else
     FOUT_S15 = GPIO_FOUT_AF_FUNC; //
     P15 = 1;                      // 高电平为关灯
+#endif
 }
 
-// void alter_adjust_pwm_duty(u16 set_pwm_duty)
-
 /**
- * @brief 根据传参，加上线控调光的限制，计算最终的目标占空比（只在 pwm_channel_0 这一路有效）
+ * @brief 根据传参，加上线控调光的限制、温度过热限制、风扇工作异常限制，
+ *          计算最终的目标占空比（对所有pwm通道都有效）
+ *
+ * @attention 如果反复调用 adjust_pwm_channel_x_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_x_duty);
+ *              会导致 adjust_pwm_channel_x_duty 越来越小
  *
  * @param pwm_adjust_duty 传入的目标占空比（非最终的目标占空比）
  *
  * @return u16 最终的目标占空比
  */
-u16 get_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty)
+u16 get_pwm_channel_x_adjust_duty(u16 pwm_adjust_duty)
 {
-    u16 tmp_pwm_duty = 0;
-
-    // adjust_duty = pwm_adjust_duty; // 设定目标占空比
+    // 存放函数的返回值 -- 最终的目标占空比
     // 根据设定的目标占空比，更新经过旋钮限制之后的目标占空比：
-    tmp_pwm_duty = (u32)pwm_adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // pwm_adjust_duty * 旋钮限制的占空比系数
+    u16 tmp_pwm_duty = (u32)pwm_adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // pwm_adjust_duty * 旋钮限制的占空比系数
 
     // 判断经过旋钮限制之后的占空比 会不会 大于 温度过热之后限制的占空比
     if (tmp_pwm_duty >= limited_pwm_duty_due_to_temp)
@@ -454,6 +434,11 @@ u16 get_pwm_channel_0_adjust_duty(u16 pwm_adjust_duty)
         tmp_pwm_duty = limited_pwm_duty_due_to_unstable_engine;
     }
 
-    // adjust_pwm_channel_0_duty = tmp_pwm_duty; // 更新要调节到的、PWM的占空比
+    // 如果限制之后的占空比 大于 由于风扇异常，限制的可以调节到的最大占空比
+    if (tmp_pwm_duty >= limited_pwm_duty_due_to_fan_err)
+    {
+        tmp_pwm_duty = limited_pwm_duty_due_to_fan_err;
+    }
+
     return tmp_pwm_duty; // 返回经过线控调光限制之后的、最终的目标占空比
 }
