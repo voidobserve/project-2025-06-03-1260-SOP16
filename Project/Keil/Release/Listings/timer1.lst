@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TIMER1                                                            06/07/2025 16:56:14 PAGE 1   
+C51 COMPILER V9.60.7.0   TIMER1                                                            06/09/2025 09:44:04 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIMER1
@@ -13,7 +13,7 @@ line level    source
    2          
    3          #define TMR1_CNT_TIME 15200 // 计数周期，15200 * 0.65625us 约等于10000us--10ms
    4          
-   5          volatile u32 tmr1_cnt = 0; // 定时器TMR0的计数值（每次在中断服务函数中会加一）
+   5          volatile u32 tmr1_cnt = 0; // 定时器TMR0的计数值（每次在中断服务函数中会加一，用于累计温度过热的时间）
    6          
    7          /**
    8           * @brief 配置定时器TMR0，定时器默认关闭
@@ -62,7 +62,7 @@ line level    source
   51   1          IE_EA = 1;              // 打开总中断
   52   1      }
   53          
-C51 COMPILER V9.60.7.0   TIMER1                                                            06/07/2025 16:56:14 PAGE 2   
+C51 COMPILER V9.60.7.0   TIMER1                                                            06/09/2025 09:44:04 PAGE 2   
 
   54          /**
   55           * @brief 关闭定时器1，清空计数值
@@ -104,7 +104,7 @@ line level    source
 MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =    175    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =      6    ----
+   XDATA SIZE       =      4    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

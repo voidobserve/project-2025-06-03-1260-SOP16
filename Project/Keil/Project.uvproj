@@ -446,6 +446,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\User\key_driver.c</FilePath>
             </File>
+            <File>
+              <FileName>flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\flash.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

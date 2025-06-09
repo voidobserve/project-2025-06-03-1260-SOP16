@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 1   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/09/2025 18:13:28 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIMER2
@@ -62,7 +62,7 @@ line level    source
   48   2              // if (pwm_duty_sub_cnt >= 50)
   49   2              {
   50   3                  pwm_duty_sub_cnt = 0;
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 2   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/09/2025 18:13:28 PAGE 2   
 
   51   3                  flag_is_pwm_sub_time_comes = 1;
   52   3              }
@@ -126,7 +126,7 @@ line level    source
  104   6      
  105   6                              flag_is_enable_recv = 1;
  106   6                          }
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 3   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/09/2025 18:13:28 PAGE 3   
 
  107   5                          else if (flag_is_enable_recv &&
  108   5                                   low_level_cnt >= 2 && low_level_cnt < 7 &&
@@ -190,7 +190,7 @@ line level    source
  162   4                      high_level_cnt++;
  163   4                  }
  164   3      
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 4   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/09/2025 18:13:28 PAGE 4   
 
  165   3                  if (__flag_is_recved_data) //
  166   3                  {
@@ -254,7 +254,7 @@ line level    source
                                       FOUT_S16 = GPIO_FOUT_AF_FUNC; //
                                       P16 = 1;                      // 高电平为关灯
                                   }
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 5   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/09/2025 18:13:28 PAGE 5   
 
                                   // else if (c_duty >= KNOB_DIMMING_MIN_ADC_VAL) // 大于某个值，再打开PWM，�
              -�脚配置回PWM
@@ -318,7 +318,7 @@ line level    source
  278   4                  } // if (0 == flag_is_in_power_on) // 不处于开机缓启动，才使能PWM占空比调节
  279   3      
  280   3      #if 0
-C51 COMPILER V9.60.7.0   TIMER2                                                            06/07/2025 16:56:14 PAGE 6   
+C51 COMPILER V9.60.7.0   TIMER2                                                            06/09/2025 18:13:28 PAGE 6   
 
                           // printf("c_duty %u\n", c_duty);
                           // printf(",c=%u\n", c_duty);
@@ -335,7 +335,7 @@ line level    source
 MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =    714    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =     17    ----
+   XDATA SIZE       =     15    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

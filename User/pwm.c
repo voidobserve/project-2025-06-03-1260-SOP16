@@ -106,7 +106,7 @@ static volatile u16 buff_index_2 = 0;         // 用于滤波的数组下标
 */
 void according_pin9_to_adjust_pwm(void)
 {
-    static u16 last_limited_pwm_duty_due_to_unstable_engine = MAX_PWM_DUTY;
+    // static u16 last_limited_pwm_duty_due_to_unstable_engine = MAX_PWM_DUTY;
 
 #define ADC_DEAD_ZONE_NEAR_170VAC (30) // 170VAC附近的ad值死区
     static volatile u16 filter_buff[32] = {
@@ -191,7 +191,7 @@ void according_pin9_to_adjust_pwm(void)
             }
         }
 
-        // {
+        // { // 现在测得是5.83ms执行一次，每100次打印一次，平均耗时是583ms
         //     static u8 cnt = 0;
         //     cnt++;
         //     if (cnt >= 100)
@@ -308,12 +308,12 @@ void according_pin9_to_adjust_pwm(void)
     }
 
     // 如果 limited_pwm_duty_due_to_unstable_engine 改变，这里要更新 adjust_pwm_channel_ x _duty 的状态
-    if (last_limited_pwm_duty_due_to_unstable_engine != limited_pwm_duty_due_to_unstable_engine)
-    {
-        adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
-        adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
-        last_limited_pwm_duty_due_to_unstable_engine = limited_pwm_duty_due_to_unstable_engine;
-    }
+    // if (last_limited_pwm_duty_due_to_unstable_engine != limited_pwm_duty_due_to_unstable_engine)
+    // {
+    //     adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+    //     adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+    //     last_limited_pwm_duty_due_to_unstable_engine = limited_pwm_duty_due_to_unstable_engine;
+    // }
 }
 
 // 根据9脚的电压来设定16脚的电平（过压保护）
@@ -412,7 +412,7 @@ void pwm_channel_1_disable(void)
  * @attention 如果反复调用 adjust_pwm_channel_x_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_x_duty);
  *              会导致 adjust_pwm_channel_x_duty 越来越小
  *
- * @param pwm_adjust_duty 传入的目标占空比（非最终的目标占空比）
+ * @param pwm_adjust_duty 传入的目标占空比（非最终的目标占空比） expect_adjust_pwm_channel_x_duty 
  *
  * @return u16 最终的目标占空比
  */
@@ -421,6 +421,8 @@ u16 get_pwm_channel_x_adjust_duty(u16 pwm_adjust_duty)
     // 存放函数的返回值 -- 最终的目标占空比
     // 根据设定的目标占空比，更新经过旋钮限制之后的目标占空比：
     u16 tmp_pwm_duty = (u32)pwm_adjust_duty * limited_max_pwm_duty / MAX_PWM_DUTY; // pwm_adjust_duty * 旋钮限制的占空比系数
+
+    // 温度、发动机异常功率不稳定、风扇异常，都是强制限定占空比
 
     // 判断经过旋钮限制之后的占空比 会不会 大于 温度过热之后限制的占空比
     if (tmp_pwm_duty >= limited_pwm_duty_due_to_temp)
@@ -442,3 +444,9 @@ u16 get_pwm_channel_x_adjust_duty(u16 pwm_adjust_duty)
 
     return tmp_pwm_duty; // 返回经过线控调光限制之后的、最终的目标占空比
 }
+
+// 更新 pwm_channel_0 待调整的占空比
+// void update_pwm_channel_0_adjust_duty(void)
+// {
+//     adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_0_duty);
+// }

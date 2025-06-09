@@ -9,7 +9,8 @@
 ".\Release\Objects\timer2.obj",
 ".\Release\Objects\knob_dimming.obj",
 ".\Release\Objects\rf_recv.obj",
-".\Release\Objects\key_driver.obj" 
+".\Release\Objects\key_driver.obj",
+".\Release\Objects\flash.obj" 
 TO ".\Release\Objects\Demo" 
 PRINT(".\Release\Listings\Demo.m51") RAMSIZE(256) 
 CODE( 0X0000-0X3EEF )

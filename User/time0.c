@@ -86,6 +86,24 @@ void TIMR0_IRQHandler(void) interrupt TMR0_IRQn
             rf_key_para.cur_scan_times++; // 用于433遥控器按键扫描
         }
 
+        { // rf对码功能计时，从 上电后 到 RF_LEARN_TIMES期间，使能对码功能
+            static u16 rf_learn_cnt = 0;
+
+            if (flag_is_rf_enable && flag_is_in_rf_learning)
+            {
+                rf_learn_cnt++;
+                if (rf_learn_cnt >= RF_LEARN_TIMES)
+                {
+                    rf_learn_cnt = 0;
+                    flag_is_in_rf_learning = 0;
+                }
+            }
+            else
+            {
+                rf_learn_cnt = 0;
+            }
+        }
+
         { // 风扇状态检测，累计一段时间后更新状态
             static u16 fan_normal_cnt = 0;
             static u16 fan_err_cnt = 0;

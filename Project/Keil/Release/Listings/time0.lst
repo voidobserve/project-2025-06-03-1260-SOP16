@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TIME0                                                             06/07/2025 16:56:13 PAGE 1   
+C51 COMPILER V9.60.7.0   TIME0                                                             06/09/2025 18:13:27 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TIME0
@@ -62,7 +62,7 @@ line level    source
   49   1          TMR0_CNTL = 0;
   50   1          TMR0_CNTH = 0;
   51   1      
-C51 COMPILER V9.60.7.0   TIME0                                                             06/07/2025 16:56:13 PAGE 2   
+C51 COMPILER V9.60.7.0   TIME0                                                             06/09/2025 18:13:27 PAGE 2   
 
   52   1          __DisableIRQ(TMR0_IRQn); // 关闭中断（不使能中断）
   53   1      }
@@ -101,44 +101,62 @@ line level    source
   86   3                  rf_key_para.cur_scan_times++; // 用于433遥控器按键扫描
   87   3              }
   88   2      
-  89   2              { // 风扇状态检测，累计一段时间后更新状态
-  90   3                  static u16 fan_normal_cnt = 0;
-  91   3                  static u16 fan_err_cnt = 0;
-  92   3      
-  93   3                  if (flag_tim_scan_fan_is_err) // 如果检测到了风扇异常
-  94   3                  {
-  95   4                      fan_err_cnt++;
-  96   4                      fan_normal_cnt = 0;
-  97   4      
-  98   4                      if (fan_err_cnt > FAN_SCAN_TIMES)
-  99   4                      {
- 100   5                          fan_err_cnt = 0;
- 101   5                          cur_fan_status = FAN_STATUS_ERROR;
- 102   5                      }
- 103   4                  }
- 104   3                  else
- 105   3                  {
- 106   4                      fan_normal_cnt++;
- 107   4                      fan_err_cnt = 0;
- 108   4      
- 109   4                      if (fan_normal_cnt > FAN_SCAN_TIMES)
- 110   4                      {
- 111   5                          fan_normal_cnt = 0;
- 112   5                          cur_fan_status = FAN_STATUS_NORMAL;
- 113   5                      }
-C51 COMPILER V9.60.7.0   TIME0                                                             06/07/2025 16:56:13 PAGE 3   
+  89   2              { // rf对码功能计时，从 上电后 到 RF_LEARN_TIMES期间，使能对码功能
+  90   3                  static u16 rf_learn_cnt = 0;
+  91   3      
+  92   3                  if (flag_is_rf_enable && flag_is_in_rf_learning)
+  93   3                  {
+  94   4                      rf_learn_cnt++;
+  95   4                      if (rf_learn_cnt >= RF_LEARN_TIMES)
+  96   4                      {
+  97   5                          rf_learn_cnt = 0;
+  98   5                          flag_is_in_rf_learning = 0;
+  99   5                      }
+ 100   4                  }
+ 101   3                  else
+ 102   3                  {
+ 103   4                      rf_learn_cnt = 0;
+ 104   4                  }
+ 105   3              }
+ 106   2      
+ 107   2              { // 风扇状态检测，累计一段时间后更新状态
+ 108   3                  static u16 fan_normal_cnt = 0;
+ 109   3                  static u16 fan_err_cnt = 0;
+ 110   3      
+ 111   3                  if (flag_tim_scan_fan_is_err) // 如果检测到了风扇异常
+ 112   3                  {
+ 113   4                      fan_err_cnt++;
+C51 COMPILER V9.60.7.0   TIME0                                                             06/09/2025 18:13:27 PAGE 3   
 
- 114   4                  }
- 115   3              } // 风扇状态检测，累计一段时间后更新状态
- 116   2          }
- 117   1      
- 118   1          // 退出中断设置IP，不可删除
- 119   1          __IRQnIPnPop(TMR0_IRQn);
- 120   1      }
+ 114   4                      fan_normal_cnt = 0;
+ 115   4      
+ 116   4                      if (fan_err_cnt > FAN_SCAN_TIMES)
+ 117   4                      {
+ 118   5                          fan_err_cnt = 0;
+ 119   5                          cur_fan_status = FAN_STATUS_ERROR;
+ 120   5                      }
+ 121   4                  }
+ 122   3                  else
+ 123   3                  {
+ 124   4                      fan_normal_cnt++;
+ 125   4                      fan_err_cnt = 0;
+ 126   4      
+ 127   4                      if (fan_normal_cnt > FAN_SCAN_TIMES)
+ 128   4                      {
+ 129   5                          fan_normal_cnt = 0;
+ 130   5                          cur_fan_status = FAN_STATUS_NORMAL;
+ 131   5                      }
+ 132   4                  }
+ 133   3              } // 风扇状态检测，累计一段时间后更新状态
+ 134   2          }
+ 135   1      
+ 136   1          // 退出中断设置IP，不可删除
+ 137   1          __IRQnIPnPop(TMR0_IRQn);
+ 138   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    215    ----
+   CODE SIZE        =    264    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =      7    ----
    PDATA SIZE       =   ----    ----

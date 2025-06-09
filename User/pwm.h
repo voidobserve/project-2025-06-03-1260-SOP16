@@ -1,8 +1,20 @@
 #ifndef _PWM_H
 #define _PWM_H
 
+#include "my_config.h"
 #include "include.h"
 #include <stdio.h>
+
+#define MAX_PWM_DUTY (6000) // 100%占空比   (SYSCLK 4800 0000 /  8000  == 6000)
+enum
+{
+    PWM_DUTY_100_PERCENT = 6000, // 100%占空比
+    PWM_DUTY_80_PERCENT = 4800,  // 80%
+    PWM_DUTY_75_PERCENT = 4500,  // 75%占空比
+    PWM_DUTY_50_PERCENT = 3000,  // 50%占空比
+    PWM_DUTY_30_PERCENT = 1800,  // 30%占空比
+    PWM_DUTY_25_PERCENT = 1500,  // 25%占空比
+};
 
 // 由温度限制的PWM占空比 （对所有PWM通道都生效）
 extern volatile u16 limited_pwm_duty_due_to_temp;
@@ -16,19 +28,9 @@ extern volatile u16 expect_adjust_pwm_channel_0_duty; // 存放期望调节到�
 extern volatile u16 adjust_pwm_channel_0_duty;        // pwm_channle_0 要调整到的占空比
 
 extern volatile u16 cur_pwm_channel_1_duty;    // 当前设置的第二路PWN的占空比
-volatile u16 expect_adjust_pwm_channel_1_duty; // 存放期望调节到的 pwm_channle_1 占空比
+extern volatile u16 expect_adjust_pwm_channel_1_duty; // 存放期望调节到的 pwm_channle_1 占空比
 extern volatile u16 adjust_pwm_channel_1_duty; // pwm_channle_1 要调整到的占空比
-
-#define MAX_PWM_DUTY (6000) // 100%占空比   (SYSCLK 4800 0000 /  8000  == 6000)
-enum
-{
-    PWM_DUTY_100_PERCENT = 6000, // 100%占空比
-    PWM_DUTY_80_PERCENT = 4800,  // 80%
-    PWM_DUTY_75_PERCENT = 4500,  // 75%占空比
-    PWM_DUTY_50_PERCENT = 3000,  // 50%占空比
-    PWM_DUTY_30_PERCENT = 1800,  // 30%占空比
-    PWM_DUTY_25_PERCENT = 1500,  // 25%占空比
-};
+ 
 
 void pwm_init(void);
 

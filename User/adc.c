@@ -4,6 +4,11 @@
 // 存放温度状态的变量
 volatile u8 temp_status = TEMP_NORMAL;
 
+volatile u16 adc_val_pin_9 = 0; // 存放9脚采集到的ad值
+
+volatile bit flag_tim_scan_fan_is_err = 0;      // 标志位，由定时器扫描并累计时间，表示当前风扇是否异常
+volatile u8 cur_fan_status = FAN_STATUS_NORMAL; // 当前风扇状态
+
 // volatile bit flag_is_pin_9_vol_bounce = 0; // 标志位，9脚电压是否发生了跳动
 
 // adc相关的引脚配置
@@ -186,6 +191,9 @@ void temperature_scan(void)
     adc_sel_pin(ADC_SEL_PIN_GET_TEMP); // 先切换成热敏电阻对应的引脚的adc配置
     voltage = get_voltage_from_pin();  // 采集热敏电阻上的电压
 
+    // MY_DEBUG:
+    // voltage = 4095; // 测试用
+
 #if USE_MY_DEBUG
     // printf("PIN-8 voltage: %lu mV\n", voltage);
 #endif // USE_MY_DEBUG
@@ -309,47 +317,15 @@ void set_duty(void)
     }
     else if (TEMP_75 == temp_status)
     {
-        // 如果温度超过了75摄氏度且累计10min
-        // tmr0_disable(); // 关闭定时器0，不以9脚的电压来调节PWM
-        // tmr0_is_open = 0;
-        // 设定占空比
-        // adjust_duty = PWM_DUTY_50_PERCENT;
-
         limited_pwm_duty_due_to_temp = PWM_DUTY_50_PERCENT; // 将pwm占空比限制到最大占空比的 50%
-        {
-            // 是否要更新所有pwm通道待调节的占空比值（温度异常后，这个代码块之后执行一次）
-            static bit flag_is_update_adjust_duty = 1;
-            if (flag_is_update_adjust_duty)
-            {
-                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
-                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
-                flag_is_update_adjust_duty = 0;
-            }
-        }
     }
     // else if (TEMP_75_30MIN == temp_status)
     else if (TEMP_75_5_MIN == temp_status)
     {
-        // tmr0_disable(); // 关闭定时器0，不以9脚的电压来调节PWM
-        // tmr0_is_open = 0;
-        // 设定占空比
-        // adjust_duty = PWM_DUTY_25_PERCENT;
-
         limited_pwm_duty_due_to_temp = PWM_DUTY_25_PERCENT; // 将pwm占空比限制到最大占空比的 25%
-        {
-            // 是否要更新所有pwm通道待调节的占空比值（温度异常后，这个代码块之后执行一次）
-            static bit flag_is_update_adjust_duty = 1;
-            if (flag_is_update_adjust_duty)
-            {
-                adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
-                adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
-                flag_is_update_adjust_duty = 0;
-            }
-        }
     }
 }
 
-volatile u16 adc_val_pin_9 = 0; // 存放9脚采集到的ad值
 // volatile u16 adc_val_pin_9_filter_count = 0;
 // u16 adc_val_pin_9_temp;
 // 更新9脚采集的ad值
@@ -365,11 +341,9 @@ void adc_update_pin_9_adc_val(void)
 #endif // USE_MY_DEBUG // 打印从9脚采集到的ad值
 }
 
-volatile bit flag_tim_scan_fan_is_err = 0;      // 标志位，由定时器扫描并累计时间，表示当前风扇是否异常
-volatile u8 cur_fan_status = FAN_STATUS_NORMAL; // 当前风扇状态
 void fan_scan(void)
 {
-    static u8 last_fan_status = FAN_STATUS_NORMAL;
+    // static u8 last_fan_status = FAN_STATUS_NORMAL;
 
     u16 adc_val = 0;
     adc_sel_pin(ADC_SEL_PIN_FAN_DETECT);
@@ -398,16 +372,7 @@ void fan_scan(void)
         }
 
         // 风扇正常工作，pwm正常输出
-        limited_pwm_duty_due_to_fan_err = PWM_DUTY_100_PERCENT;
-
-        // 如果是从 风扇异常工作 -> 风扇正常工作，才会执行下面的语句
-        // 风扇工作正常之后，下面的语句并不能让当前pwm占空比恢复
-        // if (FAN_STATUS_ERROR == last_fan_status)
-        // {
-        //     adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
-        //     adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
-        //     last_fan_status = FAN_STATUS_NORMAL;
-        // }
+        limited_pwm_duty_due_to_fan_err = PWM_DUTY_100_PERCENT; 
     }
     else // FAN_STATUS_ERROR == cur_fan_status
     {
@@ -418,15 +383,6 @@ void fan_scan(void)
         }
 
         // 风扇工作异常，限制pwm输出，占空比不超过25%
-        limited_pwm_duty_due_to_fan_err = PWM_DUTY_25_PERCENT;
-
-        // 如果是从 风扇正常工作 -> 风扇异常工作，才会执行下面的语句
-        // 到了风扇异常工作之后，立刻设置所有pwm通道可以调节的最大的占空比
-        if (FAN_STATUS_NORMAL == last_fan_status)
-        {
-            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
-            adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
-            last_fan_status = FAN_STATUS_ERROR;
-        }
+        limited_pwm_duty_due_to_fan_err = PWM_DUTY_25_PERCENT; 
     }
 }

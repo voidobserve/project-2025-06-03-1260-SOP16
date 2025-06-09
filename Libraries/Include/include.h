@@ -37,7 +37,7 @@
 #include "tx8C126x_timer.h"
 #include "tx8C126x_uart_spi_i2c.h"
 #include "tx8C126x_amp.h"
-#include "debug.h"
+// #include "debug.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/

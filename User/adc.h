@@ -12,15 +12,17 @@ enum
     ADC_SEL_PIN_NONE = 0,
     ADC_SEL_PIN_GET_TEMP = 0x01, // 根据热敏电阻一端来配置ADC
     ADC_SEL_PIN_GET_VOL = 0x02,  // 根据9脚来配置ADC
-    ADC_SEL_PIN_P31 = 0x03, // P31，7脚
-    ADC_SEL_PIN_FAN_DETECT, // P13， 芯片的1脚，检测风扇是否异常的引脚
-    
+    ADC_SEL_PIN_P31 = 0x03,      // P31，7脚
+    ADC_SEL_PIN_FAN_DETECT,      // P13， 芯片的1脚，检测风扇是否异常的引脚
+
 };
- 
+
+// 存放温度状态的变量
+extern volatile u8 temp_status;
 
 // 标志位，由定时器扫描并累计时间，表示当前风扇是否异常
-extern volatile bit flag_tim_scan_fan_is_err; 
-extern volatile u8 cur_fan_status ; // 当前风扇状态
+extern volatile bit flag_tim_scan_fan_is_err;
+extern volatile u8 cur_fan_status; // 当前风扇状态
 
 extern volatile u16 adc_val_pin_9; // 存放9脚采集到的ad值
 

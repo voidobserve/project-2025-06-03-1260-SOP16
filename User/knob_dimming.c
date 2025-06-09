@@ -4,7 +4,7 @@ volatile u16 limited_max_pwm_duty = MAX_PWM_DUTY; // 存放经过旋钮限制之
 // volatile u16 limited_adjust_pwm_duty;  // 存放旋钮限制之后的，待调整的占空比值
 
 // 根据旋钮，限制当前的最大占空比
-// 会更新 limited_max_pwm_duty 这个变量
+// 会更新 limited_max_pwm_duty 这个全局变量
 void update_max_pwm_duty_coefficient(void)
 {
     /*
@@ -14,7 +14,7 @@ void update_max_pwm_duty_coefficient(void)
     */
     static bit flag_is_last_limited_equal_zero = 0;
 
-    static u16 last_limited_max_pwm_duty = MAX_PWM_DUTY;
+    // static u16 last_limited_max_pwm_duty = MAX_PWM_DUTY;
 
     volatile u16 adc_val = 0;
     adc_sel_pin(ADC_SEL_PIN_P31);
@@ -45,6 +45,7 @@ void update_max_pwm_duty_coefficient(void)
                 计算验证，这里的ad值如果只相差1，占空比的值也只相差1
             */
             // limited_max_pwm_duty = (u32)adc_val * MAX_PWM_DUTY * 2 / 10 / KNOB_DIMMING_ADC_VAL_20_PERCENT;
+            // 旧版本这里最低只能调节到5%，现在让它能够调节到5%及以下:
             limited_max_pwm_duty = ((u32)adc_val - KNOB_DIMMING_MIN_ADC_VAL) * MAX_PWM_DUTY * 2 / 10 / KNOB_DIMMING_ADC_VAL_20_PERCENT;
         }
         // else if (adc_val <= 2498) // 40% 2.97V
@@ -84,12 +85,12 @@ void update_max_pwm_duty_coefficient(void)
         // }
 
         // 如果 limited_max_pwm_duty 改变，这里要更新 adjust_pwm_channel_ x _duty 的状态
-        if (last_limited_max_pwm_duty != limited_max_pwm_duty)
-        {
-            adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
-            adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
-            last_limited_max_pwm_duty = limited_max_pwm_duty;
-        }
+        // if (last_limited_max_pwm_duty != limited_max_pwm_duty)
+        // {
+        //     adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_0_duty);
+        //     adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(adjust_pwm_channel_1_duty);
+        //     last_limited_max_pwm_duty = limited_max_pwm_duty;
+        // }
 
         // if (0 == limited_adjust_pwm_duty)
         if (0 == limited_max_pwm_duty)

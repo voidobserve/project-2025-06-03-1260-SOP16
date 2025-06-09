@@ -2,7 +2,7 @@
 
 #define TMR1_CNT_TIME 15200 // 计数周期，15200 * 0.65625us 约等于10000us--10ms
 
-volatile u32 tmr1_cnt = 0; // 定时器TMR0的计数值（每次在中断服务函数中会加一）
+volatile u32 tmr1_cnt = 0; // 定时器TMR0的计数值（每次在中断服务函数中会加一，用于累计温度过热的时间）
 
 /**
  * @brief 配置定时器TMR0，定时器默认关闭

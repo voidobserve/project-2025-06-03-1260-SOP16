@@ -2,16 +2,9 @@
 #define __MY_CONFIG_H
 
 #include "include.h" // 芯片官方提供的头文件
-#include "pwm.h"
-#include "adc.h"
-#include "time0.h" // 定时器0
-#include "timer1.h"
-#include "timer2.h"
-#include "knob_dimming.h" // 旋钮调光头文件
-#include "rf_recv.h"
 
 // MY_DEBUG:
-#define USE_MY_DEBUG 1 // 是否使用打印调试
+#define USE_MY_DEBUG 0 // 是否使用打印调试
 
 // MY_DEBUG:
 /*
@@ -22,10 +15,10 @@
     用 p06 代替 xx
 
 */
-#define USE_MY_TEST_PIN 1 // 是否使用测试用的引脚（开发板没有相关的引脚，用其他空闲的引脚来代替）
+#define USE_MY_TEST_PIN 0 // 是否使用测试用的引脚（开发板没有相关的引脚，用其他空闲的引脚来代替）
 
 // MY_DEBUG:
-#define USE_MY_TEST_433_REMOTE 1 // 是否使用测试用的433遥控器按键，用于修改特定值，观察变化
+#define USE_MY_TEST_433_REMOTE 0 // 是否使用测试用的433遥控器按键，用于修改特定值，观察变化
 
 #if USE_MY_DEBUG
 #include <stdio.h>
@@ -82,6 +75,16 @@ enum FAN_STATUS
     FAN_STATUS_ERROR,
 };
 
+#include "flash.h"
+#include "pwm.h"
+#include "adc.h"
+#include "time0.h" // 定时器0
+#include "timer1.h"
+#include "timer2.h"
+#include "knob_dimming.h" // 旋钮调光头文件
+#include "rf_recv.h"
 #include "key_driver.h"
+
+
 
 #endif
